@@ -6,6 +6,7 @@ var watchify = require('watchify');
 var browserify = require('browserify');
 var uglify = require('gulp-uglify');
 var streamify = require('gulp-streamify');
+var sweetjs = require('gulp-sweetjs');
 
 var sources = ['./src/main.js'];
 var destination = '../../public/compiled/';
@@ -22,8 +23,8 @@ gulp.task('lint', function() {
 
 gulp.task('prod', function() {
   return browserify('./src/main.js', {
-    standalone: standalone
-  }).bundle()
+      standalone: standalone
+    }).bundle()
     .on('error', onError)
     .pipe(source('lichess.round.min.js'))
     .pipe(streamify(uglify()))
@@ -42,6 +43,10 @@ gulp.task('dev', function() {
   function rebundle() {
     return bundleStream.bundle()
       .on('error', onError)
+      .pipe(sweetjs({
+        modules: ['./mithril.compile.sjs'],
+        compile: {expand: true, cwd: ".", src: "src/**/*.js", dest: "sweet-dest/"}
+      }))
       .pipe(source('lichess.round.js'))
       .pipe(gulp.dest(destination));
   }
