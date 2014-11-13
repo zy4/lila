@@ -11,13 +11,9 @@ final class Env(
 
   private val GeoIPFile = config getString "geoip.file"
   private val GeoIPCacheSize = config getInt "geoip.cache_size"
-  private val PlayersCacheSize = config getInt "players.cache_size"
-
-  lazy val players = new Players(PlayersCacheSize)
 
   lazy val stream = new Stream(
     system = system,
-    players = players,
     geoIp = MaxMindIpGeo(GeoIPFile, GeoIPCacheSize))
 }
 

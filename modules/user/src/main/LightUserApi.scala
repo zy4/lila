@@ -21,11 +21,11 @@ final class LightUserApi(coll: Coll) {
       title = doc.getAs[String](F.title))
   }
 
-  private val cache = lila.memo.MixedCache[String, Option[LightUser]](
+  private val cache = new lila.memo.MixedCacheMapDB[String, Option[LightUser]](
     id => coll.find(
       BSONDocument(User.BSONFields.id -> id),
       BSONDocument(F.username -> true, F.title -> true)
     ).one[LightUser],
-    timeToLive = 30 minutes,
+    gbs = 0.3,
     default = id => LightUser(id, id, None).some)
 }

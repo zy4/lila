@@ -1,17 +1,15 @@
 package lila.worldMap
 
-import lila.memo.Builder
-
-private[worldMap] final class Players(cacheSize: Int) {
+private[worldMap] object Players {
 
   // to each game ID, associate list of player Locations
   // there can be 0, 1 or 2 players per game ID,
   // but this constraint is not expressed by the cache type :(
-  private val cache = Builder.size[String, List[Location]](cacheSize)
+  private val cache = org.mapdb.DBMaker.newCacheDirect[String, List[Location]](0.2)
 
   def getOpponentLocation(gameId: String, myLocation: Location): Option[Location] =
 
-    Option(cache getIfPresent gameId) getOrElse Nil match {
+    Option(cache get gameId) getOrElse Nil match {
 
       // new game ID, store player location
       case Nil =>

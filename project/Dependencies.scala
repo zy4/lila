@@ -33,6 +33,7 @@ object Dependencies {
       t2v, jgitMaven, sprayRepo, sprayNightlies, snowplow)
   }
 
+  val mapdb = "org.mapdb" % "mapdb" % "1.0.6"
   val scalaz = "org.scalaz" %% "scalaz-core" % "7.1.0"
   val scalalib = "com.github.ornicar" %% "scalalib" % "5.1"
   val config = "com.typesafe" % "config" % "1.2.1"

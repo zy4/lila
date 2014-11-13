@@ -18,7 +18,7 @@ object ApplicationBuild extends Build {
     libraryDependencies ++= Seq(
       scalaz, scalalib, hasher, config, apache, scalaTime,
       csv, jgit, elastic4s, findbugs, RM,
-      PRM, spray.caching, maxmind, prismic),
+      PRM, spray.caching, maxmind, prismic, mapdb),
       scalacOptions := compilerOptions,
       sources in doc in Compile := List(),
       incOptions := incOptions.value.withNameHashing(true),
@@ -102,7 +102,7 @@ object ApplicationBuild extends Build {
   )
 
   lazy val memo = project("memo", Seq(common)).settings(
-    libraryDependencies ++= Seq(guava, findbugs, spray.caching) ++ provided(play.api)
+    libraryDependencies ++= Seq(guava, findbugs, spray.caching, mapdb) ++ provided(play.api)
   )
 
   lazy val db = project("db", Seq(common)).settings(

@@ -23,10 +23,10 @@ final class RelationApi(
     maxFollow: Int,
     maxBlock: Int) {
 
-  def followers(userId: ID) = cached followers userId
-  def following(userId: ID) = cached following userId
-  def blockers(userId: ID) = cached blockers userId
-  def blocking(userId: ID) = cached blocking userId
+  def followers(userId: ID) = fuccess(cached.followers get userId)
+  def following(userId: ID) = fuccess(cached.following get userId).thenPp
+  def blockers(userId: ID) = fuccess(cached.blockers get userId)
+  def blocking(userId: ID) = fuccess(cached.blocking get userId)
 
   def blocks(userId: ID) = blockers(userId) ⊹ blocking(userId)
 
@@ -44,7 +44,7 @@ final class RelationApi(
   def follows(u1: ID, u2: ID) = following(u1) map (_ contains u2)
   def blocks(u1: ID, u2: ID) = blocking(u1) map (_ contains u2)
 
-  def relation(u1: ID, u2: ID): Fu[Option[Relation]] = cached.relation(u1, u2)
+  def relation(u1: ID, u2: ID): Fu[Option[Relation]] = fuccess(cached.relation.get(u1, u2))
 
   def onlinePopularUsers(max: Int): Fu[List[UserModel]] =
     (getOnlineUserIds().toList map { id =>
@@ -57,11 +57,12 @@ final class RelationApi(
       case ((false, _), _)        => funit
       case ((_, Some(Follow)), _) => funit
       case ((_, _), Some(Block))  => funit
-      case _ => RelationRepo.follow(u1, u2) >> limitFollow(u1) >>
-        refresh(u1, u2) >>-
+      case _ => RelationRepo.follow(u1, u2) >> limitFollow(u1) >>- {
+        refresh(u1, u2)
         (timeline ! Propagate(
           FollowUser(u1, u2)
         ).toFriendsOf(u1).toUsers(List(u2)))
+      }
     }
 
   private def limitFollow(u: ID) = nbFollowing(u) flatMap { nb =>
@@ -76,7 +77,7 @@ final class RelationApi(
     if (u1 == u2) funit
     else relation(u1, u2) flatMap {
       case Some(Block) => funit
-      case _ => RelationRepo.block(u1, u2) >> limitBlock(u1) >> refresh(u1, u2) >>-
+      case _ => RelationRepo.block(u1, u2) >> limitBlock(u1) >>- refresh(u1, u2) >>-
         bus.publish(lila.hub.actorApi.relation.Block(u1, u2), 'relation) >>-
         (nbBlockers(u2) zip nbFollowers(u2))
     }
@@ -84,19 +85,20 @@ final class RelationApi(
   def unfollow(u1: ID, u2: ID): Funit =
     if (u1 == u2) funit
     else relation(u1, u2) flatMap {
-      case Some(Follow) => RelationRepo.unfollow(u1, u2) >> refresh(u1, u2)
+      case Some(Follow) => RelationRepo.unfollow(u1, u2) >>- refresh(u1, u2)
       case _            => funit
     }
 
   def unblock(u1: ID, u2: ID): Funit =
     if (u1 == u2) funit
     else relation(u1, u2) flatMap {
-      case Some(Block) => RelationRepo.unblock(u1, u2) >> refresh(u1, u2) >>-
+      case Some(Block) => RelationRepo.unblock(u1, u2) >>- refresh(u1, u2) >>-
         bus.publish(lila.hub.actorApi.relation.UnBlock(u1, u2), 'relation)
       case _ => funit
     }
 
-  private def refresh(u1: ID, u2: ID): Funit =
-    cached.invalidate(u1, u2) >>-
-      List(u1, u2).foreach(actor ! ReloadOnlineFriends(_))
+  private def refresh(u1: ID, u2: ID) {
+    cached.invalidate(u1, u2)
+    List(u1, u2).foreach(actor ! ReloadOnlineFriends(_))
+  }
 }

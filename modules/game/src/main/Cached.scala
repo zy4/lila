@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 import play.api.libs.json.JsObject
 
 import lila.db.api.$count
-import lila.memo.{ AsyncCache, ExpireSetMemo, Builder }
+import lila.memo.{ AsyncCache, ExpireSetMemo }
 import tube.gameTube
 
 final class Cached(ttl: Duration) {
@@ -19,10 +19,6 @@ final class Cached(ttl: Duration) {
 
   val rematch960 = new ExpireSetMemo(3.hours)
 
-  val activePlayerUidsDay = AsyncCache(
-    (nb: Int) => GameRepo.activePlayersSince(DateTime.now minusDays 1, nb),
-    timeToLive = 1 hour)
-
   val activePlayerUidsWeek = AsyncCache(
     (nb: Int) => GameRepo.activePlayersSince(DateTime.now minusWeeks 1, nb),
     timeToLive = 6 hours)
@@ -31,11 +27,11 @@ final class Cached(ttl: Duration) {
 
   object Divider {
 
-    private val cache = Builder.size[String, chess.Division](5000)
+    private val cache = org.mapdb.DBMaker.newCacheDirect[String, chess.Division](0.2)
     private val empty = chess.Division(none[Int], none[Int])
 
     def apply(game: Game, initialFen: Option[String]): chess.Division = {
-      Option(cache getIfPresent game.id) | {
+      Option(cache get game.id) | {
         val div = chess.Replay(
           pgn = game.pgnMoves mkString " ",
           initialFen = initialFen,

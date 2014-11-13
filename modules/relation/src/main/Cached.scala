@@ -1,25 +1,32 @@
 package lila.relation
 
-import lila.memo.AsyncCache
+import lila.memo.MixedCacheMapDB
+import ornicar.scalalib.Zero
 
 private[relation] final class Cached {
 
-  private[relation] val followers = AsyncCache(RelationRepo.followers, maxCapacity = 2000)
-  private[relation] val following = AsyncCache(RelationRepo.following, maxCapacity = 2000)
-  private[relation] val blockers = AsyncCache(RelationRepo.blockers, maxCapacity = 2000)
-  private[relation] val blocking = AsyncCache(RelationRepo.blocking, maxCapacity = 2000)
-  private[relation] val relation = AsyncCache(findRelation, maxCapacity = 20000)
+  private def cacheUp[K, V: Zero](f: K => Fu[V], gbs: Double): MixedCacheMapDB[K, V] =
+    new MixedCacheMapDB[K, V](f = f, default = _ => zero[V], gbs = gbs)
 
-  private def findRelation(pair: (String, String)): Fu[Option[Relation]] = pair match {
-    case (u1, u2) => following(u1) flatMap { f =>
-      f(u2).fold(fuccess(true.some), blocking(u1) map { b =>
-        b(u2).fold(false.some, none)
-      })
+  private[relation] val followers = cacheUp(RelationRepo.followers, 0.2)
+  private[relation] val following = cacheUp(RelationRepo.following, 0.2)
+  private[relation] val blockers = cacheUp(RelationRepo.blockers, 0.2)
+  private[relation] val blocking = cacheUp(RelationRepo.blocking, 0.2)
+  private[relation] val relation = cacheUp(findRelation, 0.4)
+
+  private def findRelation(pair: (String, String)): Fu[Option[Relation]] = fuccess {
+    pair match {
+      case (u1, u2) =>
+        if (following.get(u1)(u2)) true.some
+        else if (blocking.get(u1)(u2)) true.some
+        else none
     }
   }
 
-  private[relation] def invalidate(u1: ID, u2: ID): Funit =
-    (List(followers, following, blockers, blocking) flatMap { cache =>
-      List(u1, u2) map cache.remove
-    }).sequenceFu.void >> relation.remove(u1, u2)
+  private[relation] def invalidate(u1: ID, u2: ID) {
+    List(followers, following, blockers, blocking) foreach { cache =>
+      List(u1, u2) foreach cache.invalidate
+    }
+    relation.invalidate(u1 -> u2)
+  }
 }

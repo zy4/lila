@@ -21,12 +21,12 @@ private[relation] final class RelationActor(
 
   def receive = {
 
-    case GetOnlineFriends(userId) => onlineFriends(userId) pipeTo sender
+    case GetOnlineFriends(userId) => onlineFriends(userId).thenPp pipeTo sender
 
     // triggers following reloading for this user id
     case ReloadOnlineFriends(userId) => onlineFriends(userId) foreach {
       case OnlineFriends(users) =>
-        bus.publish(SendTo(userId, "following_onlines", users.map(_.titleName)), 'users)
+        bus.publish(SendTo(userId, "following_onlines", users.map(_.titleName)).pp, 'users)
     }
 
     case NotifyMovement =>
@@ -45,7 +45,7 @@ private[relation] final class RelationActor(
 
   private def onlineFriends(userId: String): Fu[OnlineFriends] =
     api following userId map { ids =>
-      OnlineFriends(ids.flatMap(onlines.get).toList)
+      OnlineFriends(ids.flatMap(onlines.pp.get).toList)
     }
 
   private def notifyFollowers(users: List[LightUser], message: String) {

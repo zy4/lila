@@ -10,7 +10,6 @@ import play.api.libs.json._
 
 final class Stream(
     system: ActorSystem,
-    players: Players,
     geoIp: MaxMindIpGeo) {
 
   private val (enumerator, channel) = Concurrent.broadcast[MoveEvent]
@@ -21,7 +20,7 @@ final class Stream(
         geoIp getLocation move.ip flatMap Location.apply match {
           case None => Input.Empty
           case Some(loc) =>
-            val opponentLoc = players.getOpponentLocation(move.gameId, loc)
+            val opponentLoc = Players.getOpponentLocation(move.gameId, loc)
             Input.El(Json.stringify {
               Json.obj(
                 "country" -> loc.country,
