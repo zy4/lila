@@ -45,7 +45,7 @@ function renderTable(ctrl, curPly) {
     ]);
   });
   if (result) {
-    trs.push(m('td', m('td.result[colspan=3]', result)));
+    trs.push(m('tr', m('td.result[colspan=3]', result)));
     var winner = game.getPlayer(ctrl.root.data, ctrl.root.data.game.winner);
     trs.push(m('tr.status', m('td[colspan=3]', [
       renderStatus(ctrl.root),
