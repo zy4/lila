@@ -4,15 +4,22 @@ var game = require('game').game;
 var status = require('game').status;
 var renderStatus = require('../view/status');
 
-function renderTd(move, ply, curPly) {
+function renderTr(move, ply, curPly) {
   return move ? {
-    tag: 'td',
+    tag: 'div',
     attrs: {
-      class: 'move' + (ply === curPly ? ' active' : ''),
+      class: 'move' + (ply === curPly ? ' active' : '') + (ply%2===0 ? ' bottom': ''),
       'data-ply': ply
     },
     children: [move]
-  } : null;
+  } : {
+    tag: 'div',
+    attrs: {
+      class: 'move bottom filler',
+      'data-ply': ply
+    },
+    children: ['...']
+  };
 }
 
 function renderTable(ctrl, curPly) {
@@ -31,14 +38,14 @@ function renderTable(ctrl, curPly) {
       result = '½-½';
   }
   var trs = pairs.map(function(pair, i) {
-    return m('tr', [
-      m('td.index', i + 1),
-      renderTd(pair[0], 2 * i + 1, curPly),
-      renderTd(pair[1], 2 * i + 2, curPly)
+    return m('td', [
+      renderTr(pair[0], 2 * i + 1, curPly),
+      renderTr(pair[1], 2 * i + 2, curPly),
+      m('div.index', [i + 1])
     ]);
   });
   if (result) {
-    trs.push(m('tr', m('td.result[colspan=3]', result)));
+    trs.push(m('td', m('td.result[colspan=3]', result)));
     var winner = game.getPlayer(ctrl.root.data, ctrl.root.data.game.winner);
     trs.push(m('tr.status', m('td[colspan=3]', [
       renderStatus(ctrl.root),
@@ -88,8 +95,8 @@ function renderButtons(ctrl, curPly) {
 }
 
 function autoScroll(movelist) {
-  var plyEl = movelist.querySelector('.active');
-  if (plyEl) movelist.scrollTop = plyEl.offsetTop - movelist.offsetHeight / 2 + plyEl.offsetHeight / 2;
+  var plyEl = movelist.querySelector('.active').getAttribute('data-ply');
+  if (plyEl) movelist.scrollLeft = plyEl*30 - 160;
 }
 
 module.exports = function(ctrl) {
@@ -100,12 +107,12 @@ module.exports = function(ctrl) {
   };
   ctrl.vm.hash = h;
   return m('div.replay', [
+    renderButtons(ctrl, curPly),
     ctrl.enabledByPref() ? m('div.moves', {
       config: function(el, isUpdate) {
         autoScroll(el);
         if (!isUpdate) setTimeout(partial(autoScroll, el), 100);
       },
-    }, renderTable(ctrl, curPly)) : null,
-    renderButtons(ctrl, curPly)
+    }, renderTable(ctrl, curPly)) : null
   ]);
 }

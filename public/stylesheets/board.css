@@ -968,8 +968,16 @@ div.table .notyet {
   margin: 10px 0 15px 0;
 }
 .lichess_ground .replay .moves {
-  height: 115px;
-  overflow: auto;
+  height: 67px;
+  margin-top: 10px;
+  margin-right: -10px;
+  margin-left: -10px;
+  border-top: solid 1px rgb(210, 210, 210);
+  border-bottom: solid 1px rgb(210, 210, 210);
+  background-color: rgb(226, 226, 226);
+  overflow-x: auto;
+  overflow-y: hidden;
+  table-layout: fixed;
 }
 .lichess_ground .replay table {
   width: 100%;
@@ -977,26 +985,38 @@ div.table .notyet {
   -moz-user-select: none;
   -ms-user-select: none;
 }
-.lichess_ground .replay td.index {
-  width: 15%;
-  text-align: center;
-  font-weight: lighter;
+.lichess_ground .replay td {
+  max-width: 50px;
+  position: relative;
 }
-.lichess_ground .replay td.move {
+.lichess_ground .replay div.index {
+  width: 50px;
+  padding-left: 30px;
+  border-top: solid 1px rgb(210, 210, 210);
+  background-color: #eee;
+}
+.lichess_ground .replay div.move {
   font-family: 'ChessSansPiratf', sans-serif;
+  text-align: center;
+  width: 50px;
   font-size: 1.3em;
-  padding: 2px 5px;
+  margin-top: 5px;
   cursor: pointer;
   transition: background-color 0.13s;
 }
-.lichess_ground .replay td.move:hover {
-  background: #e0e0e0;
+.lichess_ground .replay div.move.filler {
+  font-family: sans-serif;
 }
-.lichess_ground .replay td.move.active {
+.lichess_ground .replay div.move:hover {
   color: #d85000;
-  font-weight: bold;
 }
-.lichess_ground .replay td.result {
+.lichess_ground .replay div.move.active {
+  color: #d85000;
+}
+.lichess_ground .replay div.move.bottom {
+  padding-left: 25px;
+}
+.lichess_ground .replay div.result {
   font-weight: bold;
   font-size: 1.3em;
   padding: 4px 0;
