@@ -8,22 +8,21 @@ import play.api.libs.json._
 import play.twirl.api.Html
 
 import actorApi._
-import lila.hub.actorApi.game.ChangeFeatured
-import lila.hub.actorApi.{ Deploy, GetUids, WithUserIds, SendTo, SendTos }
+import lila.hub.actorApi.{ Deploy, GetUids }
 import lila.memo.ExpireSetMemo
 
 abstract class SocketActor[M <: SocketMember](uidTtl: Duration) extends Socket with Actor {
 
-  var members = Map.empty[String, M]
+  val members = scala.collection.mutable.Map.empty[String, M]
   val aliveUids = new ExpireSetMemo(uidTtl)
-  var pong = makePong(0)
+  var pong = Socket.initialPong
 
   val lilaBus = context.system.lilaBus
 
-  lilaBus.publish(lila.socket.SocketHub.Subscribe(self), 'socket)
+  lilaBus.publish(lila.socket.SocketHub.Open(self), 'socket)
 
   override def postStop() {
-    lilaBus.publish(lila.socket.SocketHub.Unsubscribe(self), 'socket)
+    lilaBus.publish(lila.socket.SocketHub.Close(self), 'socket)
     members.keys foreach eject
   }
 
@@ -33,30 +32,20 @@ abstract class SocketActor[M <: SocketMember](uidTtl: Duration) extends Socket w
   // generic message handler
   def receiveGeneric: Receive = {
 
-    case Ping(uid)               => ping(uid)
+    case Ping(uid)             => ping(uid)
 
-    case Broom                   => broom
+    case Broom                 => broom
 
     // when a member quits
-    case Quit(uid)               => quit(uid)
+    case Quit(uid)             => quit(uid)
 
-    case NbMembers(nb)           => pong = makePong(nb)
+    case NbMembers(_, pongMsg) => pong = pongMsg
 
-    case WithUserIds(f)          => f(userIds)
+    case GetUids               => sender ! uids
 
-    case GetUids                 => sender ! uids
+    case Resync(uid)           => resync(uid)
 
-    case SendTo(userId, msg)     => sendTo(userId, msg)
-
-    case SendTos(userIds, msg)   => sendTos(userIds, msg)
-
-    case Resync(uid)             => resync(uid)
-
-    case Deploy(event, html)     => notifyAll(makeMessage(event.key, html))
-
-    // the actor instance must subscribe to 'changeFeaturedGame to receive this message
-    // context.system.lilaBus.subscribe(self, 'changeFeaturedGame)
-    case ChangeFeatured(_, html) => notifyFeatured(html)
+    case Deploy(event, html)   => notifyAll(makeMessage(event.key, html))
   }
 
   def receive = receiveSpecific orElse receiveGeneric
@@ -77,23 +66,15 @@ abstract class SocketActor[M <: SocketMember](uidTtl: Duration) extends Socket w
     member push makeMessage(t, data)
   }
 
-  def makePong(nb: Int) = makeMessage("n", nb)
-
   def ping(uid: String) {
     setAlive(uid)
     withMember(uid)(_ push pong)
   }
 
-  def sendTo(userId: String, msg: JsObject) {
-    memberByUserId(userId) foreach (_ push msg)
-  }
-
-  def sendTos(userIds: Set[String], msg: JsObject) {
-    membersByUserIds(userIds) foreach (_ push msg)
-  }
-
   def broom {
-    members.keys filterNot aliveUids.get foreach eject
+    members.keys foreach { uid =>
+      if (!aliveUids.get(uid)) eject(uid)
+    }
   }
 
   def eject(uid: String) {
@@ -104,9 +85,9 @@ abstract class SocketActor[M <: SocketMember](uidTtl: Duration) extends Socket w
   }
 
   def quit(uid: String) {
-    if (members contains uid) {
-      members = members - uid
-      lilaBus.publish(SocketLeave(uid), 'socketDoor)
+    members get uid foreach { member =>
+      members -= uid
+      lilaBus.publish(SocketLeave(uid, member), 'socketDoor)
     }
   }
 
@@ -129,7 +110,7 @@ abstract class SocketActor[M <: SocketMember](uidTtl: Duration) extends Socket w
 
   def addMember(uid: String, member: M) {
     eject(uid)
-    members = members + (uid -> member)
+    members += (uid -> member)
     setAlive(uid)
     lilaBus.publish(SocketEnter(uid, member), 'socketDoor)
   }
@@ -141,9 +122,6 @@ abstract class SocketActor[M <: SocketMember](uidTtl: Duration) extends Socket w
   def memberByUserId(userId: String): Option[M] =
     members.values find (_.userId == Some(userId))
 
-  def membersByUserIds(userIds: Set[String]): Iterable[M] =
-    members.values filter (member => member.userId ?? userIds.contains)
-
   def userIds: Iterable[String] = members.values.flatMap(_.userId)
 
   def showSpectators(users: List[lila.common.LightUser], nbAnons: Int) = nbAnons match {
@@ -153,9 +131,5 @@ abstract class SocketActor[M <: SocketMember](uidTtl: Duration) extends Socket w
 
   def withMember(uid: String)(f: M => Unit) {
     members get uid foreach f
-  }
-
-  private def notifyFeatured(html: Html) {
-    notifyAll(makeMessage("featured", Json.obj("html" -> html.toString)))
   }
 }

@@ -12,8 +12,9 @@ import actorApi._
 import lila.common.LightUser
 import lila.game.actorApi.UserStartGame
 import lila.game.Event
+import lila.hub.actorApi.game.ChangeFeatured
 import lila.hub.TimeBomb
-import lila.round.actorApi.{ Bye, ChangeFeaturedMsg }
+import lila.round.actorApi.Bye
 import lila.socket._
 import lila.socket.actorApi.{ Connected => _, _ }
 import makeTimeout.short
@@ -57,6 +58,18 @@ private[round] final class Socket(
   override def preStart() {
     refreshSubscriptions
     lila.game.GameRepo game gameId map SetGame.apply pipeTo self
+  }
+
+  override def postStop() {
+    super.postStop()
+    lilaBus.unsubscribe(self)
+  }
+
+  private def refreshSubscriptions {
+    lilaBus.unsubscribe(self)
+    watchers.flatMap(_.userTv).toList.distinct foreach { userId =>
+      lilaBus.subscribe(self, Symbol(s"userStartGame:$userId"))
+    }
   }
 
   def receiveSpecific = {
@@ -112,9 +125,9 @@ private[round] final class Socket(
       case l: lila.chat.PlayerLine => Event.PlayerMessage(l)
     }))
 
-    case AnalysisAvailable                           => notifyAll("analysisAvailable", true)
+    case AnalysisAvailable                           => notifyAll("analysisAvailable")
 
-    case lila.hub.actorApi.setup.DeclineChallenge(_) => notifyAll("declined", JsNull)
+    case lila.hub.actorApi.setup.DeclineChallenge(_) => notifyAll("declined")
 
     case Quit(uid) =>
       members get uid foreach { member =>
@@ -123,7 +136,7 @@ private[round] final class Socket(
         if (member.userTv.isDefined) refreshSubscriptions
       }
 
-    case ChangeFeaturedMsg(msg) => watchers.foreach(_ push msg)
+    case ChangeFeatured(_, msg) => watchers.foreach(_ push msg)
 
     case UserStartGame(userId, game) => watchers filter (_ onUserTv userId) foreach {
       _ push makeMessage("resync")
@@ -178,12 +191,5 @@ private[round] final class Socket(
 
   private def playerDo(color: Color, effect: Player => Unit) {
     effect(color.fold(whitePlayer, blackPlayer))
-  }
-
-  private def refreshSubscriptions {
-    context.system.lilaBus.unsubscribe(self)
-    watchers.flatMap(_.userTv).toList.distinct foreach { userId =>
-      context.system.lilaBus.subscribe(self, Symbol(s"userStartGame:$userId"))
-    }
   }
 }
