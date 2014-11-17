@@ -8,17 +8,17 @@ function renderTr(move, ply, curPly) {
   return move ? {
     tag: 'div',
     attrs: {
-      class: 'move' + (ply === curPly ? ' active' : '') + (ply%2===0 ? ' bottom': ''),
+      class: 'move' + (ply === curPly ? ' active' : '') + (ply%2===1 ? ' top': ''),
       'data-ply': ply
     },
     children: [move]
   } : {
     tag: 'div',
     attrs: {
-      class: 'move bottom filler',
+      class: 'move bottom',
       'data-ply': ply
     },
-    children: ['...']
+    children: m.trust('&nbsp;')
   };
 }
 
@@ -37,7 +37,7 @@ function renderTable(ctrl, curPly) {
     default:
       result = '½-½';
   }
-  var trs = pairs.map(function(pair, i) {
+  var tds = pairs.map(function(pair, i) {
     return m('td', [
       renderTr(pair[0], 2 * i + 1, curPly),
       renderTr(pair[1], 2 * i + 2, curPly),
@@ -45,12 +45,14 @@ function renderTable(ctrl, curPly) {
     ]);
   });
   if (result) {
-    trs.push(m('tr', m('td.result[colspan=3]', result)));
     var winner = game.getPlayer(ctrl.root.data, ctrl.root.data.game.winner);
-    trs.push(m('tr.status', m('td[colspan=3]', [
-      renderStatus(ctrl.root),
-      winner ? ', ' + ctrl.root.trans(winner.color == 'white' ? 'whiteIsVictorious' : 'blackIsVictorious') : null
-    ])));
+    tds.push(m('td', [
+      m('div.status', [
+        renderStatus(ctrl.root), m.trust('<br>'),
+        winner ? ctrl.root.trans(winner.color == 'white' ? 'whiteIsVictorious' : 'blackIsVictorious') : null
+      ]),
+      m('div.index.score', [result])
+    ]));
   }
   return m('table',
     m('tbody', {
@@ -59,21 +61,21 @@ function renderTable(ctrl, curPly) {
           if (ply) ctrl.jump(parseInt(ply));
         }
       },
-      trs));
+      tds));
 }
 
 function renderButtons(ctrl, curPly) {
   var nbMoves = ctrl.root.data.game.moves.length;
   var root = ctrl.root;
   var flipAttrs = {
-    class: 'button flip hint--bottom' + (root.vm.flip ? ' active' : ''),
+    class: 'button flip hint--top' + (root.vm.flip ? ' active' : ''),
     'data-hint': root.trans('flipBoard'),
   };
   if (root.data.tv) flipAttrs.href = '/tv' + (root.data.tv.flip ? '' : '?flip=1');
   else if (root.data.player.spectator) flipAttrs.href = root.router.Round.watcher(root.data.game.id, root.data.opponent.color).url;
   else flipAttrs.onclick = root.flip;
   return m('div.buttons', [
-    m('a', flipAttrs, m('span[data-icon=B]')), m('div.hint--bottom', {
+    m('a', flipAttrs, m('span[data-icon=B]')), m('div.hint--top', {
       'data-hint': 'Tip: use your keyboard arrow keys!'
     }, [
       ['first', 'W', 1],
@@ -94,9 +96,13 @@ function renderButtons(ctrl, curPly) {
   ]);
 }
 
-function autoScroll(movelist) {
+function autoScroll(movelist, ctrl) {
   var plyEl = movelist.querySelector('.active').getAttribute('data-ply');
-  if (plyEl) movelist.scrollLeft = plyEl*30 - 160;
+  if (parseInt(plyEl) === ctrl.root.data.game.moves.length) {
+    movelist.scrollLeft = plyEl*30 + 160;
+  } else if (plyEl) {
+    movelist.scrollLeft = plyEl*30 - 160
+  }
 }
 
 module.exports = function(ctrl) {
@@ -110,9 +116,13 @@ module.exports = function(ctrl) {
     renderButtons(ctrl, curPly),
     ctrl.enabledByPref() ? m('div.moves', {
       config: function(el, isUpdate) {
-        autoScroll(el);
-        if (!isUpdate) setTimeout(partial(autoScroll, el), 100);
+        autoScroll(el, ctrl);
+        if (!isUpdate) setTimeout(partial(autoScroll, el, ctrl), 100);
       },
+      onmousewheel: function(e) {
+        this.scrollLeft -= 0.5*e.wheelDelta += e.deltaX;
+        event.preventDefault();
+      }
     }, renderTable(ctrl, curPly)) : null
   ]);
 }

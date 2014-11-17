@@ -969,63 +969,65 @@ div.table .notyet {
 }
 .lichess_ground .replay .moves {
   height: 67px;
-  margin-top: 10px;
-  margin-right: -10px;
-  margin-left: -10px;
+  padding-left: 25px;
+  margin: 10px -10px 0px -10px;
   border-top: solid 1px rgb(210, 210, 210);
   border-bottom: solid 1px rgb(210, 210, 210);
   background-color: rgb(226, 226, 226);
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: hidden;
   table-layout: fixed;
 }
 .lichess_ground .replay table {
-  width: 100%;
+  table-layout: fixed;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
 }
 .lichess_ground .replay td {
-  max-width: 50px;
-  position: relative;
+  width: 50px;
+  height: 40px;
 }
 .lichess_ground .replay div.index {
   width: 50px;
   padding-left: 30px;
+  margin-left: -25px;
   border-top: solid 1px rgb(210, 210, 210);
   background-color: #eee;
+}
+.lichess_ground .replay div.index.score {
+  margin-left: -40px;
+  width: 160px;
+  text-align: center;
 }
 .lichess_ground .replay div.move {
   font-family: 'ChessSansPiratf', sans-serif;
   text-align: center;
   width: 50px;
+  height: 20px;
   font-size: 1.3em;
   margin-top: 5px;
   cursor: pointer;
   transition: background-color 0.13s;
 }
-.lichess_ground .replay div.move.filler {
-  font-family: sans-serif;
-}
 .lichess_ground .replay div.move:hover {
-  color: #d85000;
+  color: #759900;
 }
 .lichess_ground .replay div.move.active {
   color: #d85000;
 }
-.lichess_ground .replay div.move.bottom {
-  padding-left: 25px;
+.lichess_ground .replay div.move.top {
+  margin-left: -25px;
 }
-.lichess_ground .replay div.result {
-  font-weight: bold;
+.lichess_ground .replay div.status {
+  font-family: 'Open Sans', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, Sans-Serif;
+  text-align: center;
+  width: 160px;
+  height: 45px;
   font-size: 1.3em;
-  padding: 4px 0;
-  text-align: center;
-}
-.lichess_ground .replay .status td {
-  font-size: 1em;
-  text-align: center;
-  font-style: italic;
+  font-weight: bold;
+  margin-top: 5px;
+  margin-left: -10px;
 }
 .lichess_ground .replay .buttons {
   text-align: center;

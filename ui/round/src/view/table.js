@@ -98,9 +98,9 @@ function renderTablePlay(ctrl) {
       button.standard(ctrl, game.drawable, '2', 'offerDraw', 'draw-yes'),
       button.standard(ctrl, game.resignable, 'b', 'resign', 'resign')
     ]),
-    buttons ? m('div.control.buttons', buttons) : null,
+    buttons ? m('div.control.buttons', buttons) : null/*,
     m('div.whos_turn',
-      ctrl.trans(d.game.player == d.player.color ? 'yourTurn' : 'waitingForOpponent'))
+      ctrl.trans(d.game.player == d.player.color ? 'yourTurn' : 'waitingForOpponent'))*/
   ];
 }
 
