@@ -972,8 +972,6 @@ div.table .notyet {
   padding-left: 25px;
   margin: 10px -10px 0px -10px;
   border-top: solid 1px rgb(210, 210, 210);
-  border-bottom: solid 1px rgb(210, 210, 210);
-  background-color: rgb(226, 226, 226);
   overflow-x: hidden;
   overflow-y: hidden;
   table-layout: fixed;
@@ -993,7 +991,6 @@ div.table .notyet {
   padding-left: 30px;
   margin-left: -25px;
   border-top: solid 1px rgb(210, 210, 210);
-  background-color: #eee;
 }
 .lichess_ground .replay div.index.score {
   margin-left: -40px;

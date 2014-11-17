@@ -124,7 +124,7 @@ module.exports = function(ctrl) {
         if (Math.abs(e.wheelDeltaY) > Math.abs(e.wheelDeltaX)) {
           this.scrollLeft -= 0.2*e.wheelDeltaY;
         } else {
-          this.scrollLeft -= e.wheelDeltaX;
+          this.scrollLeft -= 0.2*e.wheelDeltaX;
         }
         event.preventDefault();
       }
