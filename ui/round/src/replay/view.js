@@ -97,12 +97,16 @@ function renderButtons(ctrl, curPly) {
 }
 
 function autoScroll(movelist, ctrl) {
-  var plyEl = movelist.querySelector('.active').getAttribute('data-ply');
-  if (parseInt(plyEl) === ctrl.root.data.game.moves.length) {
-    movelist.scrollLeft = plyEl*30 + 160;
-  } else if (plyEl) {
-    movelist.scrollLeft = plyEl*30 - 160
+  var plyEl = movelist.querySelector('.active');
+  if (plyEl) {
+    ply = parseInt(plyEl.getAttribute('data-ply'));
+    if (ply === ctrl.root.data.game.moves.length) {
+      movelist.scrollLeft = ply*30 + 160;
+    } else if (plyEl) {
+      movelist.scrollLeft = ply*30 - 160
+    }
   }
+  
 }
 
 module.exports = function(ctrl) {
