@@ -120,7 +120,12 @@ module.exports = function(ctrl) {
         if (!isUpdate) setTimeout(partial(autoScroll, el, ctrl), 100);
       },
       onmousewheel: function(e) {
-        this.scrollLeft -= 0.5*e.wheelDelta += e.deltaX;
+        console.log(e);
+        if (Math.abs(e.wheelDeltaY) > Math.abs(e.wheelDeltaX)) {
+          this.scrollLeft -= 0.2*e.wheelDeltaY;
+        } else {
+          this.scrollLeft -= e.wheelDeltaX;
+        }
         event.preventDefault();
       }
     }, renderTable(ctrl, curPly)) : null
