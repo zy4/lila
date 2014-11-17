@@ -101,9 +101,9 @@ function autoScroll(movelist, ctrl) {
   if (plyEl) {
     ply = parseInt(plyEl.getAttribute('data-ply'));
     if (ply === ctrl.root.data.game.moves.length) {
-      movelist.scrollLeft = ply*28 + 160;
+      movelist.scrollLeft = ply*28 + 180;
     } else {
-      movelist.scrollLeft = ply*28 - 160
+      movelist.scrollLeft = ply*28 - 140
     }
   }
   

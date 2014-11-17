@@ -996,7 +996,7 @@ div.table .notyet {
 }
 .lichess_ground .replay div.index.score {
   margin-left: -40px;
-  width: 160px;
+  width: 180px;
   text-align: center;
 }
 .lichess_ground .replay div.move {
@@ -1021,7 +1021,7 @@ div.table .notyet {
 .lichess_ground .replay div.status {
   font-family: 'Open Sans', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, Sans-Serif;
   text-align: center;
-  width: 160px;
+  width: 180px;
   height: 45px;
   font-size: 1.3em;
   font-weight: bold;
