@@ -124,7 +124,6 @@ module.exports = function(ctrl) {
         if (!isUpdate) setTimeout(partial(autoScroll, el, ctrl), 100);
       },
       onmousewheel: function(e) {
-        console.log(e);
         if (Math.abs(e.wheelDeltaY) > Math.abs(e.wheelDeltaX)) {
           this.scrollLeft -= 0.2*e.wheelDeltaY;
         } else {
