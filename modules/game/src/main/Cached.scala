@@ -14,6 +14,7 @@ final class Cached(ttl: Duration) {
   def nbGames: Fu[Int] = count(Query.all)
   def nbMates: Fu[Int] = count(Query.mate)
   def nbImported: Fu[Int] = count(Query.imported)
+  def nbImportedBy(userId: String): Fu[Int] = count(Query imported userId)
 
   def nbPlaying(userId: String): Fu[Int] = count(Query notFinished userId)
 
@@ -36,10 +37,9 @@ final class Cached(ttl: Duration) {
 
     def apply(game: Game, initialFen: Option[String]): chess.Division = {
       Option(cache getIfPresent game.id) | {
-        val div = chess.Replay(
+        val div = chess.Replay.boards(
           moveStrs = game.pgnMoves,
-          initialFen = initialFen,
-          variant = game.variant
+          initialFen = initialFen
         ).toOption.fold(empty)(chess.Divider.apply)
         cache.put(game.id, div)
         div
