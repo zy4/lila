@@ -999,6 +999,9 @@ div.table .notyet {
   width: 180px;
   text-align: center;
 }
+.lichess_ground .replay div.index.score.black {
+  margin-left: -60px;
+}
 .lichess_ground .replay div.move {
   font-family: 'ChessSansPiratf', sans-serif;
   text-align: center;
@@ -1027,6 +1030,9 @@ div.table .notyet {
   font-weight: bold;
   margin-top: 5px;
   margin-left: -10px;
+}
+.lichess_ground .replay div.status.black {
+  margin-left: -30px;
 }
 .lichess_ground .replay .buttons {
   text-align: center;

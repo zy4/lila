@@ -47,11 +47,11 @@ function renderTable(ctrl, curPly) {
   if (result) {
     var winner = game.getPlayer(ctrl.root.data, ctrl.root.data.game.winner);
     tds.push(m('td', [
-      m('div.status', [
+      m('div.status'+(moves.length%2==1?'.black':''), [
         renderStatus(ctrl.root), m.trust('<br>'),
         winner ? ctrl.root.trans(winner.color == 'white' ? 'whiteIsVictorious' : 'blackIsVictorious') : null
       ]),
-      m('div.index.score', [result])
+      m('div.index.score'+(moves.length%2==1?'.black':''), [result])
     ]));
   }
   return m('table',
