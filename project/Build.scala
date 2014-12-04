@@ -19,7 +19,7 @@ object ApplicationBuild extends Build {
       jgit, elastic4s, findbugs, RM, PRM,
       spray.caching, maxmind, prismic),
       scalacOptions := compilerOptions,
-      // updateOptions := updateOptions.value.withCachedResolution(true),
+      updateOptions := updateOptions.value.withCachedResolution(true),
       sources in doc in Compile := List(),
       TwirlKeys.templateImports ++= Seq(
         "lila.game.{ Game, Player, Pov }",

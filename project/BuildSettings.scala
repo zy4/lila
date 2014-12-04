@@ -11,7 +11,7 @@ object BuildSettings {
     resolvers ++= Dependencies.Resolvers.commons,
     parallelExecution in Test := false,
     scalacOptions := compilerOptions,
-    // updateOptions := updateOptions.value.withCachedResolution(true),
+    updateOptions := updateOptions.value.withCachedResolution(true),
     sources in doc in Compile := List())
 
   def defaultDeps = Seq(scalaz, scalalib, jodaTime, spray.util, ws)
