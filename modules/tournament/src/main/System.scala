@@ -4,6 +4,7 @@ sealed abstract class System(val id: Int) {
   val pairingSystem: PairingSystem
   val scoringSystem: ScoringSystem
   val icon: Char
+  val clock: Boolean
 }
 
 object System {
@@ -11,18 +12,21 @@ object System {
     val pairingSystem = arena.PairingSystem
     val scoringSystem = arena.ScoringSystem
     val icon = 'g'
+    val clock = true
   }
 
   case object Swiss extends System(id = 2) {
     val pairingSystem = swiss.SwissSystem
     val scoringSystem = swiss.SwissSystem
     val icon = 'g'
+    val clock = true
   }
 
   case object Simul extends System(id = 3) {
     val pairingSystem = simul.PairingSystem
     val scoringSystem = simul.ScoringSystem
     val icon = '{'
+    val clock = false
   }
 
   val default = Arena

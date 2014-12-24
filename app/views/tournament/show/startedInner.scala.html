@@ -1,8 +1,10 @@
 @(tour: lila.tournament.Started, games: List[Game], pov: Option[Pov])(implicit ctx: Context)
 
+@if(tour.system.clock) {
 <div class="tournament_clock title_tag" data-time="@tour.remainingSeconds">
   <div class="time" data-icon="p">@tour.clockStatus</div>
 </div>
+}
 
 <h1 data-icon="@tour.system.icon">
   @tour.fullName
