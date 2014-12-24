@@ -4,7 +4,7 @@
   <div class="time" data-icon="p">@tour.clockStatus</div>
 </div>
 
-<h1 data-icon="g">
+<h1 data-icon="@tour.system.icon">
   @tour.fullName
   @if(tour.isSwiss) { [beta] }
 </h1>
@@ -22,6 +22,9 @@
   }
   case lila.tournament.System.Swiss => {
     @tournament.swissStanding(tour)
+  }
+  case lila.tournament.System.Simul => {
+    @tournament.arenaStanding(tour)
   }
 }
 

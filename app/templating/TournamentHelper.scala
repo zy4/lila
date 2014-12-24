@@ -26,12 +26,13 @@ trait TournamentHelper { self: I18nHelper =>
   def tournamentLink(tour: Tournament): Html = Html {
     val cssClass = if (tour.scheduled) "is-gold" else ""
     val url = routes.Tournament.show(tour.id)
-    s"""<a data-icon="g" class="$cssClass" href="$url">&nbsp;${tour.fullName}</a>"""
+    val icon = tour.system.icon
+    s"""<a data-icon="$icon" class="$cssClass text" href="$url">${tour.fullName}</a>"""
   }
 
   def tournamentLink(tourId: String): Html = Html {
     val url = routes.Tournament.show(tourId)
-    s"""<a data-icon="g" href="$url">&nbsp;${tournamentIdToName(tourId)}</a>"""
+    s"""<a data-icon="g" class="text" href="$url">${tournamentIdToName(tourId)}</a>"""
   }
 
   def tournamentIdToName(id: String) = tournamentEnv.cached name id getOrElse "Tournament"
@@ -39,5 +40,6 @@ trait TournamentHelper { self: I18nHelper =>
   def systemName(sys: System)(implicit ctx: UserContext) = sys match {
     case System.Arena  => System.Arena.toString
     case System.Swiss  => System.Swiss.toString
+    case System.Simul  => System.Simul.toString
   }
 }

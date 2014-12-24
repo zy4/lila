@@ -13,7 +13,7 @@
 @tours.filter(_.scheduled == scheduled).map { tour =>
 <tr @if(scheduled) { class="scheduled" }>
   <td>
-    <a data-icon="g" href="@routes.Tournament.show(tour.id)">&nbsp;@tour.name</a>
+    <a data-icon="@tour.system.icon" href="@routes.Tournament.show(tour.id)">&nbsp;@tour.name</a>
   </td>
   @tour.schedule.map { s =>
   <td>@momentFromNow(s.at)</td>

@@ -3,22 +3,33 @@ package lila.tournament
 sealed abstract class System(val id: Int) {
   val pairingSystem: PairingSystem
   val scoringSystem: ScoringSystem
+  val icon: Char
 }
 
 object System {
   case object Arena extends System(id = 1) {
     val pairingSystem = arena.PairingSystem
     val scoringSystem = arena.ScoringSystem
+    val icon = 'g'
   }
 
   case object Swiss extends System(id = 2) {
     val pairingSystem = swiss.SwissSystem
     val scoringSystem = swiss.SwissSystem
+    val icon = 'g'
+  }
+
+  case object Simul extends System(id = 3) {
+    val pairingSystem = simul.PairingSystem
+    val scoringSystem = simul.ScoringSystem
+    val icon = '{'
   }
 
   val default = Arena
 
-  val all = List(Arena, Swiss)
+  val all = List(Arena, Swiss, Simul)
+
+  val ids = all.map(_.id)
 
   val byId = all map { s => (s.id -> s) } toMap
 

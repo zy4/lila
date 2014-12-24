@@ -22,7 +22,7 @@
           <span data-icon="b" title="@trans.withdraw()"></span>
           } else {
           @if(tour.isFinished && rank == 1) {
-          <span data-icon="g" title="@trans.winner()"></span>
+          <span data-icon="@tour.system.icon" title="@trans.winner()"></span>
           } else {
           <span class="rank">@rank</span>
           }

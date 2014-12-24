@@ -41,7 +41,7 @@ final class DataForm(isDev: Boolean) {
     "clockIncrement" -> numberIn(clockIncrementPrivateChoices),
     "minutes" -> numberIn(minutePrivateChoices),
     "minPlayers" -> numberIn(minPlayerChoices),
-    "system" -> number.verifying(Set(System.Arena.id, System.Swiss.id) contains _),
+    "system" -> number.verifying(System.ids contains _),
     "variant" -> number.verifying(Set(Variant.Standard.id, Variant.Chess960.id, Variant.KingOfTheHill.id, Variant.ThreeCheck.id) contains _),
     "mode" -> optional(number.verifying(Mode.all map (_.id) contains _)),
     "password" -> optional(nonEmptyText)

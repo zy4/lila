@@ -1,6 +1,6 @@
 @(tour: lila.tournament.Created, form: Option[Html] = None)(implicit ctx: Context)
 
-<h1 data-icon="g">
+<h1 data-icon="@tour.system.icon">
   @tour.fullName
   @if(tour.isSwiss) { [beta] }
   @if(tour.hasPassword) {
