@@ -14,8 +14,7 @@ final class MongoCache[K, V: MongoCache.Handler] private (
     expiresAt: () => DateTime,
     cache: Cache[V],
     coll: Coll,
-    f: K => Fu[V],
-    keyToString: K => String) {
+    f: K => Fu[V]) {
 
   def apply(k: K): Fu[V] = cache(k) {
     coll.find(select(k)).one[Entry] flatMap {
@@ -35,14 +34,14 @@ final class MongoCache[K, V: MongoCache.Handler] private (
 
   private def makeEntry(k: K, v: V) = Entry(makeKey(k), v, expiresAt())
 
-  private def makeKey(k: K) = s"$prefix:${keyToString(k)}"
+  private def makeKey(k: K) = s"$prefix:$k"
 
   private def select(k: K) = BSONDocument("_id" -> makeKey(k))
 }
 
 object MongoCache {
 
-  private type Handler[T] = BSONHandler[_ <: BSONValue, T]
+  private type Handler[T] = BSONHandler[_<:BSONValue, T]
 
   private def expiresAt(ttl: Duration)(): DateTime =
     DateTime.now plusSeconds ttl.toSeconds.toInt
@@ -52,17 +51,14 @@ object MongoCache {
     def apply[K, V: Handler](
       prefix: String,
       f: K => Fu[V],
-      maxCapacity: Int = 512,
-      initialCapacity: Int = 64,
-      timeToLive: FiniteDuration,
-      timeToLiveMongo: Option[FiniteDuration] = None,
-      keyToString: K => String = (k: K) => k.toString): MongoCache[K, V] = new MongoCache[K, V](
+      maxCapacity: Int = 500,
+      initialCapacity: Int = 16,
+      timeToLive: FiniteDuration): MongoCache[K, V] = new MongoCache[K, V](
       prefix = prefix,
       expiresAt = expiresAt(timeToLiveMongo | timeToLive),
       cache = LruCache(maxCapacity, initialCapacity, timeToLive),
       coll = coll,
-      f = f,
-      keyToString = keyToString)
+      f = f)
 
     def single[V: Handler](
       prefix: String,
@@ -73,8 +69,7 @@ object MongoCache {
       expiresAt = expiresAt(timeToLiveMongo | timeToLive),
       cache = LruCache(timeToLive = timeToLive),
       coll = coll,
-      f = _ => f,
-      keyToString = _.toString)
+      f = _ => f)
   }
 
   def apply(coll: Coll) = new Builder(coll)

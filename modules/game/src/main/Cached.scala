@@ -6,15 +6,10 @@ import org.joda.time.DateTime
 import play.api.libs.json.JsObject
 
 import lila.db.api.$count
-import lila.db.BSON._
-import lila.memo.{ AsyncCache, MongoCache, ExpireSetMemo, Builder }
-import lila.user.{ User, UidNb }
+import lila.memo.{ AsyncCache, ExpireSetMemo, Builder }
 import tube.gameTube
-import UidNb.UidNbBSONHandler
 
-final class Cached(
-    mongoCache: MongoCache.Builder,
-    defaultTtl: FiniteDuration) {
+final class Cached(defaultTtl: FiniteDuration) {
 
   def nbGames: Fu[Int] = count(Query.all)
   def nbMates: Fu[Int] = count(Query.mate)
@@ -22,8 +17,6 @@ final class Cached(
   def nbImportedBy(userId: String): Fu[Int] = count(Query imported userId)
 
   def nbPlaying(userId: String): Fu[Int] = countShortTtl(Query nowPlaying userId)
-
-  private implicit val userHandler = User.userBSONHandler
 
   private val isPlayingSimulCache = AsyncCache[String, Boolean](
     f = userId => GameRepo.countPlayingRealTime(userId) map (1 <),
@@ -33,24 +26,19 @@ final class Cached(
 
   val rematch960 = new ExpireSetMemo(3.hours)
 
-  val activePlayerUidsDay = mongoCache[Int, List[UidNb]](
-    prefix = "player:active:day",
+  val activePlayerUidsDay = AsyncCache(
     (nb: Int) => GameRepo.activePlayersSince(DateTime.now minusDays 1, nb),
     timeToLive = 1 hour)
 
-  val activePlayerUidsWeek = mongoCache[Int, List[UidNb]](
-    prefix = "player:active:week",
+  val activePlayerUidsWeek = AsyncCache(
     (nb: Int) => GameRepo.activePlayersSince(DateTime.now minusWeeks 1, nb),
     timeToLive = 6 hours)
 
-  private val countShortTtl = AsyncCache[JsObject, Int](
-    f = (o: JsObject) => $count(o),
-    timeToLive = 5.seconds)
+  private val count = countTtl(defaultTtl)
+  private val countShortTtl = countTtl(5.seconds)
 
-  private val count = mongoCache(
-      prefix = "game:count",
-      f = (o: JsObject) => $count(o),
-      timeToLive = defaultTtl)
+  private def countTtl(ttl: FiniteDuration) =
+    AsyncCache((o: JsObject) => $count(o), timeToLive = ttl)
 
   object Divider {
 

@@ -122,7 +122,7 @@ object User extends LilaController {
         user -> user.count.game
       }
       nbWeek ← Env.game.cached activePlayerUidsWeek nb flatMap { pairs =>
-        UserRepo.byOrderedIds(pairs.map(_.userId)) map (_ zip pairs.map(_.nb))
+        UserRepo.byOrderedIds(pairs.map(_._1)) map (_ zip pairs.map(_._2))
       }
       tourneyWinners ← Env.tournament.winners scheduled nb
       online ← env.cached topOnline 30

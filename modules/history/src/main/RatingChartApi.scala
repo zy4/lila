@@ -9,21 +9,13 @@ import play.api.libs.json._
 import lila.rating.{ Glicko, PerfType }
 import lila.user.{ User, Perfs }
 
-final class RatingChartApi(
-    historyApi: HistoryApi,
-    mongoCache: lila.memo.MongoCache.Builder,
-    cacheTtl: FiniteDuration) {
+final class RatingChartApi(historyApi: HistoryApi, cacheTtl: Duration) {
 
-  def apply(user: User): Fu[Option[String]] = cache(user) map { chart =>
-    chart.nonEmpty option chart
-  }
+  def apply(user: User): Fu[Option[String]] = cache(user)
 
-  private val cache = mongoCache[User, String](
-    prefix = "history:rating",
-    f = (user: User) => build(user) map (~_),
-    maxCapacity = 64,
-    timeToLive = cacheTtl,
-    keyToString = _.id)
+  private val cache = lila.memo.AsyncCache(build,
+    maxCapacity = 50,
+    timeToLive = cacheTtl)
 
   private def build(user: User): Fu[Option[String]] = {
 
