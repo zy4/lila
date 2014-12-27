@@ -16,7 +16,7 @@ final class PrefApi(coll: Coll, cacheTtl: Duration) {
 
   private implicit val prefBSONHandler = new BSON[Pref] {
 
-    import lila.db.BSON.MapValue.{ MapReader, MapWriter }
+    import lila.db.BSON.MapValue._
     implicit val tagsReader = MapReader[String]
     implicit val tagsWriter = MapWriter[String]
 

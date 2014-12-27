@@ -4,12 +4,11 @@ import akka.actor._
 import com.typesafe.config.Config
 
 import lila.common.PimpedConfig._
-import lila.memo.{ ExpireSetMemo, MongoCache }
+import lila.memo.ExpireSetMemo
 
 final class Env(
     config: Config,
     db: lila.db.Env,
-    mongoCache: MongoCache.Builder,
     scheduler: lila.common.Scheduler,
     timeline: ActorSelection,
     system: ActorSystem) {
@@ -74,8 +73,7 @@ final class Env(
 
   lazy val cached = new Cached(
     nbTtl = CachedNbTtl,
-    onlineUserIdMemo = onlineUserIdMemo,
-    mongoCache = mongoCache)
+    onlineUserIdMemo = onlineUserIdMemo)
 }
 
 object Env {
@@ -83,7 +81,6 @@ object Env {
   lazy val current: Env = "[boot] user" describes new Env(
     config = lila.common.PlayApp loadConfig "user",
     db = lila.db.Env.current,
-    mongoCache = lila.memo.Env.current.mongoCache,
     scheduler = lila.common.PlayApp.scheduler,
     timeline = lila.hub.Env.current.actor.timeline,
     system = lila.common.PlayApp.system)
