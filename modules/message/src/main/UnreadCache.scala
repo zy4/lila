@@ -1,24 +1,19 @@
 package lila.message
 
-import scala.concurrent.duration._
+import spray.caching.{ LruCache, Cache }
 
-import lila.db.BSON._
 import lila.user.User
 
-private[message] final class UnreadCache(
-    mongoCache: lila.memo.MongoCache.Builder) {
+private[message] final class UnreadCache {
 
   // userId => thread IDs
-  private val cache = mongoCache[String, List[String]](
-    prefix = "message:unread",
-    f = ThreadRepo.userUnreadIds,
-    maxCapacity = 4096,
-    timeToLive = 7.days)
+  private val cache: Cache[List[String]] = LruCache(maxCapacity = 8192)
 
-  def apply(userId: String): Fu[List[String]] = cache(userId)
+  def apply(userId: String): Fu[List[String]] =
+    cache(userId)(ThreadRepo userUnreadIds userId)
 
   def refresh(userId: String): Fu[List[String]] =
-    (cache remove userId) >> apply(userId)
+    (cache remove userId).fold(apply(userId))(_ >> apply(userId))
 
-  def clear(userId: String) = cache remove userId
+  def clear(userId: String) = (cache remove userId).fold(funit)(_.void)
 }
