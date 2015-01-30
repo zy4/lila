@@ -227,7 +227,7 @@ function renderViewControls(ctrl, fen) {
     m('a.button.hint--bottom', {
       'data-hint': ctrl.trans('continueFromHere'),
       onclick: function() {
-        $.modal($('.continue_with'));
+        $.modal($('.continue_with'), 'padded');
       }
     }, m('span[data-icon=U]')),
     m('div#GameButtons.hint--bottom', {

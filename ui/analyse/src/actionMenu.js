@@ -24,7 +24,7 @@ module.exports = {
         }, ctrl.trans('boardEditor')),
         m('a.button.text[data-icon=U]', {
           onclick: function() {
-            $.modal($('.continue_with.' + ctrl.data.game.id));
+            $.modal($('.continue_with.' + ctrl.data.game.id), 'padded');
           }
         }, ctrl.trans('continueFromHere')), [{
           name: 'fast',

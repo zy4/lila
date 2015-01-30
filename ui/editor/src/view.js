@@ -66,7 +66,7 @@ function controls(ctrl, fen) {
       }, ctrl.trans('analysis')),
       m('a.button', {
           onclick: function() {
-            $.modal($('.continue_with'));
+            $.modal($('.continue_with'), 'padded');
           }
         },
         m('span.text[data-icon=U]', ctrl.trans('continueFromHere')))

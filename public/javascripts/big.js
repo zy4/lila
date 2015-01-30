@@ -1816,8 +1816,9 @@ lichess.storage = {
         url: $(this).attr('href'),
         cache: false,
         success: function(html) {
-          $('.lichess_overboard').remove();
-          $('#hooks_wrap').prepend(html);
+          $.modal($(html), 'setup');
+          // $('.lichess_overboard').remove();
+          // $('#hooks_wrap').prepend(html);
           prepareForm();
           $('body').trigger('lichess.content_loaded');
         }
@@ -2113,9 +2114,9 @@ lichess.storage = {
     }, 5000);
   };
 
-  $.modal = function(html) {
+  $.modal = function(html, klass) {
     var $wrap = $('<div id="modal-wrap">').html(html.clone().show());
-    var $overlay = $('<div id="modal-overlay">').html($wrap);
+    var $overlay = $('<div id="modal-overlay">').addClass(klass).html($wrap);
     $overlay.one('click', function() {
       $('#modal-overlay').remove();
     });
