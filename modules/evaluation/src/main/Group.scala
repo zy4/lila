@@ -14,20 +14,36 @@ case class PlayerAssessment(
   assessment: Int, // 1 = Not Cheating, 2 = Unlikely Cheating, 3 = Unknown, 4 = Likely Cheating, 5 = Cheating
   by: String, // moderator ID
   date: DateTime) {
+  val color = Color(white)
+}
 
-  def color = Color(white)
+case class PeerGame(
+  gameId: String,
+  white: Boolean,
+  positiveMatch: Boolean,
+  matchPercentage: Int,
+  assessment: Int
+  ) {
+  val color = Color(white)
+
+  val assessmentString: String = 
+    assessment match {
+      case 1 => "NC" // Not cheating
+      case 2 => "UC" // Unlikely Cheating
+      case 3 => "NA" // Unclear
+      case 4 => "LC" // Likely Cheating
+      case 5 => "CH" // Cheating
+      case _ => "Undef"
+    }
 }
 
 case class GameGroupResult(
   _id: String, // sourceGameId + "/" + sourceGameColor
   userId: String, // The userId of the player being evaluated
-  sourceGameId: String, // The game being talked about
-  sourceColor: String, // The side of the game being talked about
-  targetGameId: String, // The game the source matched against (from crosstable)
-  targetColor: String, // The player of the game who was matched against
-  positiveMatch: Boolean, // Was the match significant enough to make a hard determination on
-  matchPercentage: Int, // 0 = Absolutely no match, 100 = Complete match
-  assessment: Int,
+  gameId: String, // The game being talked about
+  white: Boolean, // The side of the game being talked about
+  bestMatch: PeerGame,
+  secondaryMatches: List[PeerGame],
   // Meta infos
   sfAvg: Int,
   sfSd: Int,
@@ -36,15 +52,7 @@ case class GameGroupResult(
   blur: Int,
   hold: Boolean
   ) {
-  val assessmentString: String =
-    assessment match {
-      case 1 => "Not cheating"
-      case 2 => "Unlikely cheating"
-      case 3 => "Unclear"
-      case 4 => "Likely cheating"
-      case 5 => "Cheating"
-      case _ => "Undefined"
-    }
+  val color = Color(white)
 }
 
 case class GameResults(
@@ -77,15 +85,46 @@ case class GameGroup(analysed: Analysed, color: Color, assessment: Option[Int] =
     listToListSimilarity(thisMt, thatMt, 0.8)
   }
 
-  def compareSfAccuracies (that: GameGroup): (Similarity, Similarity) = (listToListSimilarity(
-      Accuracy.diffsList(Pov(this.analysed.game, this.color), this.analysed.analysis),
-      Accuracy.diffsList(Pov(that.analysed.game, that.color), that.analysed.analysis),
-      0.8
-    ), listToListSimilarity(
-      Accuracy.diffsList(Pov(this.analysed.game, !this.color), this.analysed.analysis),
-      Accuracy.diffsList(Pov(that.analysed.game, !that.color), that.analysed.analysis),
-      0.8
-    ))
+  def compareSfAccuracies (that: GameGroup): (Similarity, Similarity) = {
+    def groupedDiffList(game: Game, color: Color, analysis: Analysis, size: Int = 5): List[List[Int]] =
+      Accuracy.diffsList(Pov(game, color), analysis).grouped(size).toList
+    // Insist that is greater than this (so this can be compared in full saturation)
+    if (that.analysed.game.turns < this.analysed.game.turns) return (Similarity(0), Similarity(0))
+    else {
+      (
+        (groupedDiffList(this.analysed.game, this.color, this.analysed.analysis) zip
+        groupedDiffList(that.analysed.game, that.color, that.analysed.analysis)) map {
+          a => listToListSimilarity(a._1, a._2, 0.8)
+        }
+      ,
+        (groupedDiffList(this.analysed.game, !this.color, this.analysed.analysis) zip
+        groupedDiffList(that.analysed.game, !that.color, that.analysed.analysis)) map {       
+          a => listToListSimilarity(a._1, a._2, 0.8)
+        }
+      ) match {
+        case (Nil, Nil)                   => (Similarity(0), Similarity(0)) // Both empty
+        case (Nil, a :: _)                => (Similarity(0), Similarity(0)) // One empty, The other with some
+        case (a :: _, Nil)                => (Similarity(0), Similarity(0))
+        case (a :: Nil, b :: Nil)         => (a, b)
+        case (a :: Nil, b :: c)           => {
+          val ssdA = ssd(b, c)
+          (a, Similarity(ssdA, if (allSimilar(b, c)) (ssdA - 0.01) else (ssdA + 0.01)))
+        }
+        case (a :: b, c :: Nil)           => {
+          val ssdA = ssd(a, b)
+          (c, Similarity(ssdA, if (allSimilar(a, b)) (ssdA - 0.01) else (ssdA + 0.01)))
+        }
+        case (a :: b, c :: d)             => {
+          val ssdA = ssd(a, b)
+          val ssdB = ssd(c, d)
+          (
+            Similarity(ssdA, if (allSimilar(a, b)) (ssdA - 0.01) else (ssdA + 0.01)),
+            Similarity(ssdB, if (allSimilar(c, d)) (ssdB - 0.01) else (ssdB + 0.01))
+          )
+        }
+      }
+    }
+  }
 
   def compareBlurRates (that: GameGroup): Similarity = pointToPointSimilarity(
     (200 * this.analysed.game.player(this.color).blurs / this.analysed.game.turns).toInt,
@@ -146,10 +185,14 @@ object Statistics {
     average(a.list)
   }
 
-  def setToSetSimilarity(avgA: Double, avgB: Double, varA: Double, varB: Double, threshold: Double): Similarity = Similarity(
-    pow(E, (-0.25) * ( log( 0.25 * ((varA / varB) + (varB / varA) + 2) ) + pow(avgA - avgB, 2) / ( varA + varB ) )),
-    threshold
-  )
+  def setToSetSimilarity(avgA: Double, avgB: Double, varA: Double, varB: Double, threshold: Double): Similarity = {
+    val sim = Similarity(
+      pow(E, (-0.25) * ( log( 0.25 * ((varA / varB) + (varB / varA) + 2) ) + pow(avgA - avgB, 2) / ( varA + varB ) )),
+      threshold)
+
+    if (sim.a.isNaN || sim.a.isInfinity) Similarity(1, threshold)
+    else sim
+  }
 
   // Bhattacharyya Coefficient
   def setToSetSimilarity[T](a: NonEmptyList[T], b: NonEmptyList[T], threshold: Double = 0.9)(implicit n: Numeric[T]): Similarity = {
@@ -203,9 +246,11 @@ object Statistics {
 
   // all Similarities in the non empty list are similar
   def allSimilar(a: NonEmptyList[Similarity]): Boolean = a.list.forall( _.matches )
+  def allSimilar(a: Similarity, b: List[Similarity]): Boolean = allSimilar(NonEmptyList.nel(a, b))
 
   // Square Sum Distance
   def ssd(a: NonEmptyList[Similarity]): Double = sqrt(a.map(x => pow(x.apply, 2)).list.sum / a.size)
+  def ssd(a: Similarity, b: List[Similarity]): Double = ssd(NonEmptyList.nel(a, b))
 
   def skip[A](l: List[A], n: Int) =
     l.zipWithIndex.collect {case (e,i) if ((i+n) % 2) == 0 => e} // (i+1) because zipWithIndex is 0-based
