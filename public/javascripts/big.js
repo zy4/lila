@@ -466,11 +466,14 @@ lichess.storage = {
             refreshButton();
           }
           $('.lichess_overboard.joining.' + data.id).each(function() {
-            if (!$(this).find('a.decline').length) $(this).find('form').append(
-              declineListener($(data.html).find('a.decline').text($.trans('decline')), function() {
-                location.href = "/";
-              })
-            );
+            if (!$(this).find('a.decline').length) $(this).find('form')
+              .append('<br />')
+              .append('<br />')
+              .append(
+                declineListener($(data.html).find('a.decline').clone().addClass('text button').text($.trans('Decline')), function() {
+                  location.href = "/";
+                })
+              );
           });
           $notif.data('timeout', setTimeout(function() {
             $notif.remove();
@@ -830,7 +833,6 @@ lichess.storage = {
 
       $boardWrap.css("width", px(512 * getZoom()));
       $('.underboard').css("margin-left", px((getZoom() - 1) * 250));
-      $('.lichess_game > .lichess_overboard').css("left", px(56 + (getZoom() - 1) * 254));
 
       if ($('body > .content').hasClass('is3d')) {
         $boardWrap.css("height", px(479.08572 * getZoom()));
@@ -1189,9 +1191,11 @@ lichess.storage = {
         check: data.pref.highlight
       }
     });
-    setTimeout(function() {
-      $('.lichess_overboard_wrap', element).addClass('visible');
-    }, 100);
+    $.modal($(element).find('.make_me_a_modal'), {
+      onClose: function() {
+        location.href = '/';
+      }
+    });
     $('#challenge_await').each(function() {
       setInterval(function() {
         $('#challenge_await').each(function() {
@@ -1801,24 +1805,21 @@ lichess.storage = {
           $infos.hide().filter('.level_' + level).show();
         }).trigger('mouseout');
       });
-
-      $form.find('a.close.icon').click(function() {
-        $form.remove();
-        $startButtons.find('a.active').removeClass('active');
-        return false;
-      });
     }
 
     $startButtons.find('a').click(function() {
       $(this).addClass('active').siblings().removeClass('active');
-      $('.lichess_overboard').remove();
+      $.modal.loading();
       $.ajax({
         url: $(this).attr('href'),
         cache: false,
         success: function(html) {
-          $.modal($(html), 'setup');
-          // $('.lichess_overboard').remove();
-          // $('#hooks_wrap').prepend(html);
+          $.modal($(html), {
+            class: 'setup',
+            onClose: function() {
+              $startButtons.find('a.active').removeClass('active');
+            }
+          });
           prepareForm();
           $('body').trigger('lichess.content_loaded');
         }
@@ -2047,7 +2048,11 @@ lichess.storage = {
       $('#refreshAssessment').click(function() {
         $.post('/mod/refreshAssess', {
           assess: data.game.id,
-          success: function(){ setTimeout(function(){ location.reload(); }, 3000) }
+          success: function() {
+            setTimeout(function() {
+              location.reload();
+            }, 3000)
+          }
         });
       });
 
@@ -2114,15 +2119,41 @@ lichess.storage = {
     }, 5000);
   };
 
-  $.modal = function(html, klass) {
-    var $wrap = $('<div id="modal-wrap">').html(html.clone().show());
-    var $overlay = $('<div id="modal-overlay">').addClass(klass).html($wrap);
-    $overlay.one('click', function() {
-      $('#modal-overlay').remove();
-    });
-    $wrap.click(function(e) {
-      e.stopPropagation();
-    });
-    $('body').prepend($overlay);
-  };
+  $.modal = (function() {
+    var overlayId = 'modal-overlay';
+    var wrapId = 'modal-wrap';
+    var loadId = 'modal-load';
+    var destroy = function() {
+      var tag = document.getElementById(overlayId);
+      if (tag) tag.remove();
+    };
+    var create = function($overlay, opts) {
+      if (opts.closable) $overlay.click(function(e) {
+        if (e.target.id === overlayId) {
+          destroy();
+          if (opts.onClose) opts.onClose();
+        }
+      });
+      $('body').prepend($overlay);
+    };
+    var modal = function(html, opts) {
+      opts = $.extend({
+        class: null,
+        closable: true,
+        onClose: null
+      }, opts);
+      var $wrap = $('<div id="' + wrapId + '">').html(html.clone().show());
+      var $overlay = $('<div id="' + overlayId + '">').addClass(opts.class).html($wrap);
+      destroy();
+      create($overlay, opts);
+    };
+    modal.loading = function() {
+      destroy();
+      var $load = $('<div id="' + loadId + '">').html($('<div class="loader-pulse"></div>'));
+      var $overlay = $('<div id="' + overlayId + '">').html($load);
+      create($overlay, {});
+    };
+    modal.destroy = destroy;
+    return modal;
+  })();
 })();

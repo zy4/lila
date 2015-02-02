@@ -19,7 +19,7 @@ side = Html("")) {
   <div class="lichess_board_wrap cg-512">
     <div class="lichess_board"></div>
   </div>
-  <div class="lichess_overboard joining @game.id">
+  <div class="lichess_overboard make_me_a_modal joining @game.id">
     @opponentUser.map { u =>
     @userLink(u)
     }.getOrElse {

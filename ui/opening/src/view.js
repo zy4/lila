@@ -61,7 +61,9 @@ function renderViewTable(ctrl) {
         m('a.button.hint--bottom', {
           'data-hint': ctrl.trans('continueFromHere'),
           onclick: function() {
-            $.modal($('.continue_with'), 'padded');
+            $.modal($('.continue_with'), {
+              class: 'padded'
+            });
           }
         }, m('span[data-icon=U]'))
       ]),

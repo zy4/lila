@@ -425,6 +425,9 @@ body.dark .is.color-icon.white::before {
 body.dark .is.color-icon.black::before {
   content: "K";
 }
+body.dark .loader-pulse {
+  background: #505050;
+}
 body.dark::-webkit-input-placeholder {
   color: #666;
 }

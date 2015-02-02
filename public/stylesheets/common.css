@@ -342,6 +342,34 @@ div.content_box .loader:after {
   margin-top: 10px;
   margin-bottom: 10px;
 }
+.loader-pulse {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #fff;
+  -webkit-animation: loader-pulse-scaleout 0.5s infinite ease-in-out;
+  animation: loader-pulse-scaleout 0.5s infinite ease-in-out;
+}
+@-webkit-keyframes loader-pulse-scaleout {
+  0% {
+    -webkit-transform: scale(0.0)
+  }
+  100% {
+    -webkit-transform: scale(1.0);
+    opacity: 0;
+  }
+}
+@keyframes loader-pulse-scaleout {
+  0% {
+    transform: scale(0.0);
+    -webkit-transform: scale(0.0);
+  }
+  100% {
+    transform: scale(1.0);
+    -webkit-transform: scale(1.0);
+    opacity: 0;
+  }
+}
 #powerTip,
 #hook {
   width: 224px;
@@ -1895,10 +1923,6 @@ div.lichess_overboard.joining input.submit {
   margin-top: 1em;
   padding: 0.6em 1em;
 }
-div.lichess_overboard.joining a.decline {
-  display: block;
-  margin-top: 1em;
-}
 div.lichess_overboard.joining .mini_board {
   margin: 10px auto;
 }
@@ -2202,6 +2226,9 @@ input.copyable {
   display: inline-block;
   margin: 1em;
 }
+.make_me_a_modal {
+  display: none;
+}
 #modal-overlay {
   display: block;
   position: fixed;
@@ -2228,4 +2255,13 @@ input.copyable {
 }
 #modal-overlay.padded #modal-wrap {
   padding: 20px;
+}
+#modal-load {
+  display: inline-block;
+  position: relative;
+  width: 100px;
+  height: 100px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }

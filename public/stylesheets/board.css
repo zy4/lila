@@ -932,18 +932,6 @@ div.lichess_overboard {
   background: #fff;
   text-align: center;
 }
-div.lichess_overboard a.close {
-  float: right;
-  display: block;
-  cursor: pointer;
-  text-decoration: none;
-  margin-top: -12px;
-  margin-right: 6px;
-  opacity: 0.4;
-}
-div.lichess_overboard a.close:hover {
-  opacity: 1;
-}
 div.lichess_overboard .loader span {
   font-size: 50px;
   line-height: 103px;
