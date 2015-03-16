@@ -26,6 +26,15 @@ module.exports = function(game, analysis) {
   this.tree = makeTree(game.moves, 1);
   if (analysis) applyAnalysis(this.tree, analysis.moves);
 
+  // console.log(this.tree[52]);
+  // this.tree[52].variations.push([{
+  //   "ply": 53,
+  //   "san": "Rxd5",
+  //   "comments": [],
+  //   "variations": []
+  // }]);
+  console.log(this.tree[52]);
+
   this.moveList = function(path) {
     var tree = this.tree;
     var moves = [];

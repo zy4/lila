@@ -154,6 +154,12 @@ module.exports = function(cfg, router, i18n, onChange) {
     }]);
   }.bind(this);
 
+  setTimeout(function() {
+    // http://en.l.org/reeAk0xb/black#52
+    this.jumpToMain(52);
+    // this.onMove('d2', 'd3');
+  }.bind(this), 500);
+
   this.onMove = function(orig, dest) {
     $.sound.move();
     var chess = new Chess(

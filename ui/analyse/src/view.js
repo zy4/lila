@@ -29,18 +29,23 @@ function autoScroll(movelist) {
   if (plyEl) movelist.scrollTop = plyEl.offsetTop - movelist.offsetHeight / 2 + plyEl.offsetHeight / 2;
 }
 
-var emptyMove = m('em.move.empty', '...');
+function emptyMove(path) {
+  return m('em',
+    addPath('empty-move', path, {
+      class: 'move empty'
+    }), '...');
+}
 
 function renderMove(ctrl, move, path) {
-  if (!move) return emptyMove;
+  if (!move) return emptyMove(path);
   var pathStr = treePath.write(path);
   return {
     tag: 'a',
-    attrs: {
+    attrs: addPath('move', path, {
       class: 'move' + (pathStr === ctrl.vm.pathStr ? ' active' : ''),
       'data-path': pathStr,
       'href': '#' + path[0].ply
-    },
+    }),
     children: [
       move.eval ? renderEvalTag(renderEval(move.eval)) : (
         move.mate ? renderEvalTag('#' + move.mate) : null
@@ -54,10 +59,17 @@ function plyToTurn(ply) {
   return Math.floor((ply - 1) / 2) + 1;
 }
 
+function addPath(prefix, path, attrs) {
+  var k = prefix + '-' + treePath.write(path);
+  attrs.key = k;
+  attrs.class += ' ' + k;
+  return attrs;
+}
+
 function renderVariation(ctrl, variation, path, border) {
-  return m('div', {
+  return m('div', addPath('variation', path, {
     class: 'variation' + (border ? ' border' : '')
-  }, renderVariationContent(ctrl, variation, path));
+  }), renderVariationContent(ctrl, variation, path));
 }
 
 function renderVariationNested(ctrl, variation, path) {
@@ -117,19 +129,25 @@ function renderVariationTurn(ctrl, turn, path) {
   return [renderIndex(turn.turn + '...'), bMove, bMeta];
 }
 
-function renderOpening(ctrl, opening) {
-  return m('div.comment.opening', opening.code + ': ' + opening.name);
+function renderOpening(ctrl, opening, path) {
+  return m('div',
+    addPath('opening', path, {
+      class: 'comment opening'
+    }),
+    opening.code + ': ' + opening.name);
 }
 
 function renderMeta(ctrl, move, path) {
   if (!ctrl.vm.comments) return;
   var opening = ctrl.data.game.opening;
-  opening = (move && opening && opening.size == move.ply) ? renderOpening(ctrl, opening) : null;
+  opening = (move && opening && opening.size == move.ply) ? renderOpening(ctrl, opening, path) : null;
   if (!move || (!opening && !move.comments.length && !move.variations.length)) return;
   var children = [];
   if (opening) children.push(opening);
-  if (move.comments.length) move.comments.forEach(function(comment) {
-    children.push(m('div.comment', comment));
+  if (move.comments.length) move.comments.forEach(function(comment, i) {
+    children.push(m('div', addPath('comment-' + i, path, {
+      class: 'comment'
+    }), comment));
   });
   var border = children.length === 0;
   if (move.variations.length) move.variations.forEach(function(variation, i) {
@@ -149,12 +167,12 @@ function renderIndex(txt) {
   };
 }
 
-function renderTurnDiv(children) {
+function renderTurnDiv(children, path) {
   return {
     tag: 'div',
-    attrs: {
+    attrs: addPath('turn', path, {
       class: 'turn',
-    },
+    }),
     children: children
   };
 }
@@ -169,20 +187,20 @@ function renderTurn(ctrl, turn, path) {
   var bMeta = renderMeta(ctrl, turn.black, bPath);
   if (wMove) {
     if (wMeta) return [
-      renderTurnDiv([index, wMove, emptyMove]),
+      renderTurnDiv([index, wMove, emptyMove(wPath)], wPath),
       wMeta,
       bMove ? [
-        renderTurnDiv([index, emptyMove, bMove]),
+        renderTurnDiv([index, emptyMove(bPath), bMove], bPath),
         bMeta
       ] : null,
     ];
     return [
-      renderTurnDiv([index, wMove, bMove]),
+      renderTurnDiv([index, wMove, bMove], wPath),
       bMeta
     ];
   }
   return [
-    renderTurnDiv([index, emptyMove, bMove]),
+    renderTurnDiv([index, emptyMove(bPath), bMove], bPath),
     bMeta
   ];
 }
@@ -213,6 +231,7 @@ function renderAnalyse(ctrl) {
       result = '½-½';
   }
   var tree = renderTree(ctrl, ctrl.analyse.tree);
+  // console.log(JSON.stringify(tree));
   if (result) {
     tree.push(m('div.result', result));
     var winner = game.getPlayer(ctrl.data, ctrl.data.game.winner);
