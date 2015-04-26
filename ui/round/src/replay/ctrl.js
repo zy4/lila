@@ -45,7 +45,7 @@ module.exports = function(root) {
             fen: chess.fen(),
             check: chess.in_check(),
             lastMove: [lm.from, lm.to],
-            turnColor: chess.turn() == 'w' ? 'white' : 'black'
+            turnColor: chess.turn() === 'w' ? 'white' : 'black'
           };
         }
       }

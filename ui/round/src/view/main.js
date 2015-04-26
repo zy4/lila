@@ -54,6 +54,35 @@ function renderVariantReminder(ctrl) {
   });
 }
 
+function renderBigResult(ctrl) {
+  // if (!status.finished(ctrl.root.data)) return;
+  var result;
+  // if (ctrl.root.data.game.winner) {
+  //   case 'white':
+  //     result = '1-0';
+  //     break;
+  //   case 'black':
+  //     result = '0-1';
+  //     break;
+  //   default:
+  //     result = '½-½';
+  // }
+  return m('div', {
+    class: 'victory_overlay',
+    config: function(el, isUpdate) {
+      if (isUpdate) return;
+      setTimeout(function() {
+        el.classList.add('visible');
+        setTimeout(function() {
+          el.classList.add('gone');
+        }, 1200);
+      }, 1000);
+    }
+  }, m('div.inner', [
+    m('strong', 'VICTORY!')
+  ]));
+}
+
 function visualBoard(ctrl) {
   return m('div.lichess_board_wrap', [
     m('div', {
@@ -65,7 +94,8 @@ function visualBoard(ctrl) {
       }
     }, chessground.view(ctrl.chessground)),
     renderPromotion(ctrl),
-    renderVariantReminder(ctrl)
+    renderVariantReminder(ctrl),
+    renderBigResult(ctrl)
   ]);
 }
 
