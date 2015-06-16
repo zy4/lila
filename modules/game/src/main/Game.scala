@@ -167,7 +167,6 @@ case class Game(
       clock = game.clock)
 
     val state = Event.State(
-      situation.color,
       game.turns,
       (status != updated.status) option updated.status,
       whiteOffersDraw = whitePlayer.isOfferingDraw,
@@ -177,18 +176,7 @@ case class Game(
       updated.correspondenceClock map Event.CorrespondenceClock.apply
     }
 
-    val possibleMovesEvents = (players collect {
-      case p if p.isHuman => Event.possibleMoves(situation, p.color)
-    })
-
-    val events = possibleMovesEvents ::: // BC
-      state :: // BC
-      Event.fromMove(move, situation, state, clockEvent, possibleMovesEvents) :::
-      (Event fromSituation situation) // BC
-
-    val finalEvents = events :::
-      clockEvent.toList ::: // BC
-      {
+    val finalEvents = Event.Move(move, situation, state, clockEvent) :: {
         // abstraction leak, I know.
         (updated.variant.threeCheck && situation.check) ?? List(Event.CheckCount(
           white = updated.checkCount.white,

@@ -19,22 +19,6 @@ sealed trait Event {
 
 object Event {
 
-  def fromMove(move: ChessMove, situation: Situation, state: State, clock: Option[Event], possibleMoves: List[PossibleMoves]): List[Event] =
-    Move(move, situation, state, clock) :: List(
-      (move.capture ifTrue move.enpassant) map { Event.Enpassant(_, !move.color) }, // BC
-      move.promotion map { Promotion(_, move.dest) }, // BC
-      move.castle map { case (king, rook) => Castling(king, rook, move.color) } // BC
-    ).flatten
-
-  def fromSituation(situation: Situation): List[Event] = List(
-    situation.check ?? situation.kingPos map Check.apply, // BC
-    situation.threefoldRepetition option Threefold, // BC
-    Some(Premove(situation.color) // BC
-    )).flatten
-
-  def possibleMoves(situation: Situation, color: Color) =
-    PossibleMoves(color, (color == situation.color) ?? situation.destinations)
-
   sealed trait Empty extends Event {
     def data = JsNull
   }
@@ -231,24 +215,10 @@ object Event {
   }
 
   case class State(
-      color: Color,
-      turns: Int,
-      status: Option[Status],
-      whiteOffersDraw: Boolean,
-      blackOffersDraw: Boolean) extends Event {
-    def typ = "state"
-    def data = Json.obj(
-      "color" -> color.name,
-      "turns" -> turns,
-      "status" -> status.map { s =>
-        Json.obj(
-          "id" -> s.id,
-          "name" -> s.name)
-      },
-      "wDraw" -> whiteOffersDraw.option(true),
-      "bDraw" -> blackOffersDraw.option(true)
-    ).noNull
-  }
+    turns: Int,
+    status: Option[Status],
+    whiteOffersDraw: Boolean,
+    blackOffersDraw: Boolean)
 
   case class TakebackOffers(
       white: Boolean,
