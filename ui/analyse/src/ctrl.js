@@ -47,7 +47,7 @@ module.exports = function(opts) {
   }.bind(this);
 
   var showGround = function() {
-    var s;
+    var s, isNew = !this.chessground;
     try {
       s = this.analyse.getStep(this.vm.path);
     } catch (e) {
@@ -64,7 +64,7 @@ module.exports = function(opts) {
       fen: s.fen,
       turnColor: color,
       movable: {
-        color: dests && Object.keys(dests).length > 0 ? color : null,
+        color: (dests && Object.keys(dests).length) ? color : null,
         dests: dests || {}
       },
       check: s.check,
@@ -72,20 +72,22 @@ module.exports = function(opts) {
     };
     this.vm.step = s;
     this.vm.cgConfig = config;
-    if (!this.chessground)
-      this.chessground = ground.make(this.data, config, userMove);
+    if (isNew) this.chessground = ground.make(this.data, config, userMove);
     this.chessground.set(config);
+    if (isNew) setupPremoving();
     if (opts.onChange) opts.onChange(config.fen, this.vm.path);
     if (!dests) getDests();
   }.bind(this);
 
   var getDests = debounce(function() {
+    setTimeout(function() {
     if (this.vm.step.dests) return;
     this.socket.sendAnaDests({
       variant: this.data.game.variant.key,
       fen: this.vm.step.fen,
       path: this.vm.pathStr
     });
+    }.bind(this), 3000);
   }.bind(this), 200, false);
 
   this.jump = function(path) {
@@ -131,13 +133,7 @@ module.exports = function(opts) {
     };
     if (prom) move.promotion = prom;
     this.socket.sendAnaMove(move);
-    // prepare premoving
-    this.chessground.set({
-      turnColor: this.chessground.data.movable.color,
-      movable: {
-        color: opposite(this.chessground.data.movable.color)
-      }
-    });
+    setupPremoving();
   }.bind(this);
 
   this.addStep = function(step, path) {
@@ -155,6 +151,15 @@ module.exports = function(opts) {
   this.reset = function() {
     this.chessground.set(this.vm.situation);
     m.redraw();
+  }.bind(this);
+
+  var setupPremoving = function() {
+    this.chessground.set({
+      turnColor: this.chessground.data.movable.color,
+      movable: {
+        color: opposite(this.chessground.data.movable.color)
+      }
+    });
   }.bind(this);
 
   this.socket = new socket(opts.socketSend, this);
