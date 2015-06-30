@@ -24,10 +24,14 @@ final class Env(
    * +- 1 tourneyMap          ActorMap
    *    +- x tourney          SequentialActor
    *    |  +- 1 fics          ActorFSM
+   *    |  |  +- 1 telnet     Actor
+   *    |  +- 1 fics block    ActorFSM
    *    |     +- 1 telnet     Actor
    *    +- 1 gameMap          ActorMap
    *       +- x game          SequentialActor
    *          +- 1 fics       ActorFSM // reuse tourney fics ref
+   *          |  +- 1 telnet  Actor
+   *          +- 1 fics block ActorFSM // reuse tourney fics block ref
    *             +- 1 telnet  Actor
    */
 
@@ -52,11 +56,15 @@ final class Env(
     password = config getString "fics.password",
     enabled = Enabled)
 
-  private val ficsProps =
-    if (ficsConfig.enabled) Props(classOf[FICS], ficsConfig)
+  private val ficsAsyncProps =
+    if (ficsConfig.enabled) Props(classOf[FICSAsync], ficsConfig)
     else Props(classOf[FICStub])
 
-  private val mainFics = system.actorOf(ficsProps, name = "fics")
+  private val ficsBlockProps =
+    if (ficsConfig.enabled) Props(classOf[FICSBlock], ficsConfig)
+    else Props(classOf[FICStub])
+
+  private val mainFics = system.actorOf(ficsBlockProps, name = "fics")
 
   private val relayColl = db(CollectionRelay)
 
@@ -76,7 +84,8 @@ final class Env(
   private val tourneyMap = system.actorOf(Props(new lila.hub.ActorMap {
     def mkActor(id: String) = new TourneyActor(
       id = id,
-      ficsProps = ficsProps,
+      ficsAsyncProps = ficsAsyncProps,
+      ficsBlockProps = ficsBlockProps,
       repo = repo,
       importer = importer)
     def receive = actorMapReceive

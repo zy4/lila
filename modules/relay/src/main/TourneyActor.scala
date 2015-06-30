@@ -9,7 +9,8 @@ import lila.hub.SequentialActor
 
 private[relay] final class TourneyActor(
     id: String,
-    ficsProps: Props,
+    ficsAsyncProps: Props,
+    ficsBlockProps: Props,
     repo: RelayRepo,
     importer: Importer) extends SequentialActor {
 
@@ -17,13 +18,15 @@ private[relay] final class TourneyActor(
 
   context setReceiveTimeout 1.hour
 
-  val fics = context.actorOf(ficsProps, name = "fics")
+  val ficsAsync = context.actorOf(ficsAsyncProps, name = "fics-async")
+  val ficsBlock = context.actorOf(ficsBlockProps, name = "fics-block")
 
   val gameMap = context.actorOf(Props(new lila.hub.ActorMap {
     def mkActor(ficsIdStr: String) = {
       val ficsId = parseIntOption(ficsIdStr) err s"Invalid relay FICS id $ficsIdStr"
       new GameActor(
-        fics = fics,
+        ficsAsync = ficsAsync,
+        ficsBlock = ficsBlock,
         ficsId = ficsId,
         relayId = id,
         getRelayGame = () => repo.gameByFicsId(id, ficsId),
