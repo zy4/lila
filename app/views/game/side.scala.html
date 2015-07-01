@@ -36,7 +36,7 @@
           }
         </span>
         @game.pgnImport.flatMap(_.date).getOrElse(
-        game.isBeingPlayed.fold(trans.playingRightNow(), momentFormat(game.createdAt))
+        game.isBeingPlayed.fold(trans.playingRightNow(), Html(s"<span title='${showDateTime(game.createdAt)}'>${momentFormat(game.createdAt)}</span>"))
         )
       </div>
       @game.pgnImport.flatMap(_.date).map { date =>
@@ -116,15 +116,13 @@
     <div class="players top">
       @chess.Color.all.map { c =>
       @defining(r player c) { p =>
-      <div class="player color-icon is @{c.name}">
-        @p.title @p.name (@p.rating)
-      </div>
+      <div class="player text color-icon is @{c.name}">@p.extendedName</div>
       }
       }
     </div>
     }
     <div class="padded">
-      @momentFormat(game.createdAt)<br />
+      <span title="@showDateTime(game.createdAt)">@momentFormat(game.createdAt)</span><br />
       Relayed by <a href="http://www.freechess.org/">FICS</a>
     </div>
   </div>
