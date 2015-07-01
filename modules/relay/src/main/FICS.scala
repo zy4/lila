@@ -1,6 +1,8 @@
 package lila.relay
 
-trait FICS with Actor with Stash with LoggingFSM[FICS.State, Option[FICS.Request]] {
+import akka.actor._
+
+trait FICS extends Actor with Stash with LoggingFSM[FICS.State, Option[FICS.Request]] {
 
   def log(lines: List[String]) {
     lines filterNot noise foreach { l =>
@@ -45,6 +47,8 @@ object FICS {
     def remote = new java.net.InetSocketAddress(host, port)
   }
 
+  case class Pair(async: ActorRef, block: ActorRef)
+
   sealed trait State
   case object Connect extends State
   case object Login extends State
@@ -65,5 +69,5 @@ object FICS {
     def apply(str: String): Option[Limited.type] = str contains R option (Limited)
   }
 
-  private val EOM = "fics% "
+  val EOM = "fics% "
 }

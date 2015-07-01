@@ -35,7 +35,7 @@ private[relay] final class FICSBlock(config: FICS.Config)
 
   when(Enter) {
     case Event(In(data), _) if data contains "Press return to enter the server" =>
-      telnet ! BufferUntil(EOM.some)
+      telnet ! BufferUntil(FICS.EOM.some)
       send("")
       for (v <- Seq("seek", "shout", "cshout", "pin", "gin")) send(s"set $v 0")
       for (c <- Seq(1, 4, 53)) send(s"- channel $c")

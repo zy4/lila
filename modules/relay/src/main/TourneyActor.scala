@@ -18,15 +18,15 @@ private[relay] final class TourneyActor(
 
   context setReceiveTimeout 1.hour
 
-  val ficsAsync = context.actorOf(ficsAsyncProps, name = "fics-async")
-  val ficsBlock = context.actorOf(ficsBlockProps, name = "fics-block")
+  val fics = FICS.Pair(
+    async = context.actorOf(ficsAsyncProps, name = "fics-async"),
+    block = context.actorOf(ficsBlockProps, name = "fics-block"))
 
   val gameMap = context.actorOf(Props(new lila.hub.ActorMap {
     def mkActor(ficsIdStr: String) = {
       val ficsId = parseIntOption(ficsIdStr) err s"Invalid relay FICS id $ficsIdStr"
       new GameActor(
-        ficsAsync = ficsAsync,
-        ficsBlock = ficsBlock,
+        fics = fics,
         ficsId = ficsId,
         relayId = id,
         getRelayGame = () => repo.gameByFicsId(id, ficsId),
@@ -44,7 +44,7 @@ private[relay] final class TourneyActor(
 
     case Recover => withRelay { relay =>
       implicit val t = makeTimeout seconds 30
-      fics ? command.ListGames(relay.ficsId) mapTo
+      fics.async ? command.ListGames(relay.ficsId) mapTo
         manifest[command.ListGames.Result] flatMap { games =>
           val rgs = games.map { g =>
             relay gameByFicsId g.ficsId match {

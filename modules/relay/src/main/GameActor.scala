@@ -8,7 +8,7 @@ import scala.util.{ Try, Success, Failure }
 import lila.hub.SequentialActor
 
 private[relay] final class GameActor(
-    fics: ActorRef,
+    fics: FICS.Pair,
     ficsId: Int,
     relayId: String,
     getRelayGame: () => Fu[Option[Relay.Game]],
@@ -27,7 +27,7 @@ private[relay] final class GameActor(
 
     case GetTime => withRelayGame { g =>
       implicit val t = makeTimeout seconds 10
-      fics ? command.GetTime(g.white) mapTo
+      fics.async ? command.GetTime(g.white) mapTo
         manifest[command.GetTime.Result] addEffect {
           case Failure(err)  => fufail(err)
           case Success(data) => importer.setClocks(g.id, data.white, data.black)
@@ -69,7 +69,7 @@ private[relay] final class GameActor(
 
     case Recover =>
       implicit val t = makeTimeout seconds 60
-      fics ? command.Moves(ficsId) mapTo
+      fics.async ? command.Moves(ficsId) mapTo
         manifest[command.Moves.Result] flatMap {
           case Failure(err) => fufail(err)
           case Success(data) =>
@@ -80,7 +80,7 @@ private[relay] final class GameActor(
                     self ! GetTime
                     // re-observe. If a limit was reached before,
                     // but a slot became available, use it.
-                    fics ! FICS.Observe(ficsId)
+                    fics.async ! FICS.Observe(ficsId)
                   case false =>
                 }
               else fufail(s"Can't import wrong game")
@@ -96,7 +96,7 @@ private[relay] final class GameActor(
 
   def end = setEnd() >>- {
     // println(s"[$ficsId] end game $self")
-    fics ! FICS.Unobserve(ficsId)
+    fics.async ! FICS.Unobserve(ficsId)
     // self ! SequentialActor.Terminate
   }
 
