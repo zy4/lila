@@ -2,7 +2,43 @@ package lila.relay
 
 import akka.actor._
 
-trait FICS extends Actor with Stash with LoggingFSM[FICS.State, Option[FICS.Request]] {
+abstract class FICS[A](config: FICS.Config)
+    extends Actor with LoggingFSM[FICS.State, A] {
+
+  import FICS._
+  import Telnet._
+
+  var send: String => Unit = _
+
+  def afterConfigure: State
+
+  val telnet = context.actorOf(Props(classOf[Telnet], config.remote, self), name = "telnet")
+
+  when(Connect) {
+    case Event(Connection(s), _) =>
+      send = s
+      goto(Login)
+  }
+
+  when(Login) {
+    case Event(In(data), _) if data endsWith "login: " =>
+      send("guest")
+      goto(Enter)
+    case Event(in: In, _) => stay
+  }
+
+  when(Enter) {
+    case Event(In(data), _) if data contains "Press return to enter the server" =>
+      telnet ! BufferUntil(FICS.EOM.some)
+      send("")
+      for (v <- Seq("seek", "shout", "cshout", "pin", "gin")) send(s"set $v 0")
+      for (c <- Seq(1, 4, 53)) send(s"- channel $c")
+      send("set kiblevel 3000") // shut up if your ELO is < 3000
+      send("style 12")
+      stay
+    case Event(In(data), _) if data contains "Style 12 set." => afterConfigure
+    case Event(in: In, _)                                    => stay
+  }
 
   def log(lines: List[String]) {
     lines filterNot noise foreach { l =>
@@ -57,17 +93,6 @@ object FICS {
   case object Ready extends State
   case object Run extends State
   case object Throttle extends State
-
-  case class Request(cmd: command.Command, replyTo: ActorRef)
-
-  trait Stashable
-  case class Observe(ficsId: Int) extends Stashable
-  case class Unobserve(ficsId: Int) extends Stashable
-
-  case object Limited {
-    val R = "You are already observing the maximum number of games"
-    def apply(str: String): Option[Limited.type] = str contains R option (Limited)
-  }
 
   val EOM = "fics% "
 }

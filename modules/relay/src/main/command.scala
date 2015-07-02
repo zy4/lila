@@ -5,7 +5,7 @@ import org.joda.time.DateTime
 import scala.util.matching.Regex
 import scala.util.{ Try, Success, Failure }
 
-sealed trait Command extends FICS.Stashable {
+sealed trait Command {
   type Result
   def str: String
   def parse(lines: List[String]): Option[Result]

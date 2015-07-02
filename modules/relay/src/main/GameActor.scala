@@ -80,7 +80,7 @@ private[relay] final class GameActor(
                     self ! GetTime
                     // re-observe. If a limit was reached before,
                     // but a slot became available, use it.
-                    fics.async ! FICS.Observe(ficsId)
+                    fics.async ! FICSAsync.Observe(ficsId)
                   case false =>
                 }
               else fufail(s"Can't import wrong game")
@@ -96,7 +96,7 @@ private[relay] final class GameActor(
 
   def end = setEnd() >>- {
     // println(s"[$ficsId] end game $self")
-    fics.async ! FICS.Unobserve(ficsId)
+    fics.async ! FICSAsync.Unobserve(ficsId)
     // self ! SequentialActor.Terminate
   }
 

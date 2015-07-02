@@ -6,61 +6,37 @@ import scala.concurrent.duration._
 
 import lila.hub.actorApi.map.Tell
 
-private[relay] final class FICSBlock(config: FICS.Config)
-    extends FICS with Actor with Stash with LoggingFSM[FICS.State, Option[FICS.Request]] {
+private[relay] final class FICSBlock(c: FICS.Config)
+    extends FICS[Option[FICSBlock.Request]](c) with Stash {
 
   import FICS._
+  import FICSBlock._
   import Telnet._
-  import GameEvent._
   import command.Command
 
-  var send: String => Unit = _
+  var counter = 1
 
-  val telnet = context.actorOf(Props(classOf[Telnet], config.remote, self), name = "telnet")
+  def increment = {
+    counter = counter + 1
+    counter
+  }
+
+  def afterConfigure = {
+    send("iset block")
+    goto(Throttle)
+  }
 
   startWith(Connect, none)
-
-  when(Connect) {
-    case Event(Connection(s), _) =>
-      send = s
-      goto(Login)
-  }
-
-  when(Login) {
-    case Event(In(data), _) if data endsWith "login: " =>
-      send("guest")
-      goto(Enter)
-    case Event(in: In, _) => stay
-  }
-
-  when(Enter) {
-    case Event(In(data), _) if data contains "Press return to enter the server" =>
-      telnet ! BufferUntil(FICS.EOM.some)
-      send("")
-      for (v <- Seq("seek", "shout", "cshout", "pin", "gin")) send(s"set $v 0")
-      for (c <- Seq(1, 4, 53)) send(s"- channel $c")
-      send("set kiblevel 3000") // shut up if your ELO is < 3000
-      send("style 12")
-      stay
-    case Event(In(data), _) if data contains "Style 12 set." => goto(Throttle)
-    case Event(in: In, _)                                    => stay
-  }
 
   when(Ready) {
     case Event(cmd: Command, _) =>
       send(cmd.str)
       goto(Run) using Request(cmd, sender).some
-    case Event(Observe(ficsId), _) =>
-      send(s"observe $ficsId")
-      stay
-    case Event(Unobserve(ficsId), _) =>
-      send(s"unobserve $ficsId")
-      stay
   }
 
   when(Run, stateTimeout = 20 second) {
     case Event(in: In, Some(Request(cmd, replyTo))) =>
-      val lines = handle(in)
+      val lines = in.lines
       cmd parse lines match {
         case Some(res) =>
           replyTo ! res
@@ -81,77 +57,20 @@ private[relay] final class FICSBlock(config: FICS.Config)
   }
 
   whenUnhandled {
-    case Event(_: Stashable, _) =>
+    case Event(_: command.Command, _) =>
       stash()
       stay
     case Event(in: In, _) =>
-      log(handle(in))
+      log(in.lines)
       stay
   }
 
   onTransition {
     case _ -> Ready => unstashAll()
   }
-
-  def handle(in: In): List[String] = in.lines.foldLeft(List.empty[String]) {
-    case (lines, line) =>
-      Move(line) orElse Clock(line) orElse Resign(line) orElse Draw(line) orElse Limited(line) map {
-        case move: Move =>
-          context.parent ! move
-          lines
-        case clock: Clock =>
-          context.parent ! clock
-          lines
-        case resign: Resign =>
-          context.parent ! resign
-          lines
-        case draw: Draw =>
-          context.parent ! draw
-          lines
-        case Limited =>
-          println(s"FICS ERR $line")
-          lines
-      } getOrElse {
-        line :: lines
-      }
-  }.reverse
-
-  def log(lines: List[String]) {
-    lines filterNot noise foreach { l =>
-      println(s"FICS[$stateName] $l")
-    }
-    // lines filter noise foreach { l =>
-    //   println(s"            (noise) [$stateName] $l")
-    // }
-  }
-
-  val noiseR = List(
-    """^\\ .*""".r,
-    """^:$""".r,
-    """^fics%""".r,
-    """^You will not.*""".r,
-    """.*You are now observing.*""".r,
-    """.*You are already observing.*""".r,
-    """^Game \d+: .*""".r,
-    """.*To find more about Relay.*""".r,
-    """.*You are already observing game \d+""".r,
-    """.*Removing game \d+.*""".r,
-    """.*There are no tournaments in progress.*""".r,
-    """.*Challenge from.*""".r,
-    """.*who was challenging you.*""".r,
-    // """.*in the history of both players.*""".r,
-    // """.*will be closed in a few minutes.*""".r,
-    """^\(told relay\)$""".r,
-    """^relay\(.+\)\[\d+\] kibitzes: .*""".r,
-    // """Welcome to the Free Internet Chess Server""".r,
-    // """Starting FICS session""".r,
-    """.*ROBOadmin.*""".r,
-    """.*ANNOUNCEMENT.*""".r)
-
-  def noise(str: String) = noiseR exists matches(str)
-
-  def matches(str: String)(r: scala.util.matching.Regex) = r.pattern.matcher(str).matches
 }
 
 object FICSBlock {
+
+  case class Request(cmd: command.Command, replyTo: ActorRef)
 }

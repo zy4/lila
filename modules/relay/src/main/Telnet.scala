@@ -5,7 +5,8 @@ import akka.io.{ IO, Tcp }
 import akka.util.ByteString
 import java.net.InetSocketAddress
 
-private[relay] final class Telnet(
+// private[relay] final class Telnet(
+final class Telnet(
     remote: InetSocketAddress,
     listener: ActorRef) extends Actor {
 
@@ -37,6 +38,7 @@ private[relay] final class Telnet(
           listener ! Telnet.WriteFailed
         case Received(data) =>
           val chunk = data decodeString "UTF-8"
+          println(chunk(0).toInt, chunk)
           bufferUntil match {
             case None => listener ! Telnet.In(chunk)
             case Some(eom) =>
@@ -51,6 +53,8 @@ private[relay] final class Telnet(
           bufferUntil = str
         case "close" =>
           connection ! Close
+        case str: String =>
+          connection ! Write(ByteString(s"$str\n"))
         case _: ConnectionClosed =>
           listener ! Telnet.Close
           context stop self
