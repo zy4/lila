@@ -6,15 +6,15 @@ function makeConfig(data, config, onMove) {
     fen: config.fen,
     check: config.check,
     lastMove: config.lastMove,
-    orientation: data.player.color,
+    orientation: data.orientation,
     coordinates: data.pref.coords !== 0,
     movable: {
       free: false,
       color: config.movable.color,
-      dests: config.movable.dests,
-      events: {
-        after: onMove
-      }
+      dests: config.movable.dests
+    },
+    events: {
+      move: onMove
     },
     premovable: {
       enabled: true
@@ -30,11 +30,6 @@ function makeConfig(data, config, onMove) {
     animation: {
       enabled: true,
       duration: data.pref.animationDuration
-    },
-    events: {
-      move: function(orig, dest, captured) {
-        if (captured) $.sound.capture();
-      }
     },
     disableContextMenu: true
   };
