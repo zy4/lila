@@ -46,10 +46,12 @@ private[relay] final class FICS(config: FICS.Config) extends Actor with Stash wi
     case Event(In(data), _) if data contains "Press return to enter the server" =>
       telnet ! BufferUntil(EOM.some)
       send("")
-      for (v <- Seq("seek", "shout", "cshout", "pin", "gin")) send(s"set $v 0")
+      for (v <- Seq("seek", "shout", "cshout", "pin", "gin", "bell")) send(s"set $v 0")
       for (c <- Seq(1, 4, 53)) send(s"- channel $c")
       send("set kiblevel 3000") // shut up if your ELO is < 3000
       send("style 12")
+      send("iset nowrap")
+      send("iset nohighlight")
       stay
     case Event(In(data), _) if data contains "Style 12 set." => goto(Throttle)
     case Event(in: In, _)                                    => stay
