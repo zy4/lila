@@ -150,7 +150,9 @@ object Round extends LilaController with TheftPrevention {
       else ctx.userId.flatMap(pov.game.playerByUserId) ifTrue pov.game.playable match {
         case Some(player) => renderPlayer(pov withColor player.color)
         case None if HTTPRequest.isHuman(ctx.req) =>
-          myTour(pov.game.tournamentId, false) zip
+          if (getBool("sudo") && isGranted(_.SuperAdmin))
+            Redirect(routes.Round.player(pov.fullId)).fuccess
+          else myTour(pov.game.tournamentId, false) zip
             (pov.game.simulId ?? Env.simul.repo.find) zip
             Env.relay.api.round(pov.game) zip
             Env.game.crosstableApi(pov.game) zip
@@ -230,6 +232,13 @@ object Round extends LilaController with TheftPrevention {
         routes.Lobby.home(),
         get("fen") | (chess.format.Forsyth >> game.toChess),
         mode))
+    }
+  }
+
+  def resign(fullId: String) = Open { implicit ctx =>
+    OptionResult(GameRepo pov fullId) { pov =>
+      env.resign(pov)
+      Redirect(routes.Lobby.home)
     }
   }
 }
