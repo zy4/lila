@@ -1543,12 +1543,12 @@ body #themepicker div.is3d,
 }
 #themepicker div.bg-selector {
   display: none;
+  position: relative;
 }
 #themepicker div.bg-selector > a {
   width: 40px;
   height: 40px;
-  background-attachment: scroll;
-  background-position: 50% 50%;
+  background: scroll 50% 50%;
   background-size: 250%;
   margin: unset;
 }
@@ -1589,21 +1589,22 @@ body #themepicker div.is3d,
   transform: translateY(-100%);
 }
 #themepicker .bg-selector .drop:hover {
-  color: red;
+  color: #dc322f;
 }
 #themepicker .bg-selector .choose:hover {
-  color: green;
+  color: #759900;
 }
-#themepicker div.bg-selector > a.action {
-  font-size: 10px;
-  height: auto;
-  width: auto;
+#themepicker .bg-selector > .add {
+  opacity: 0.4;
+  position: absolute;
+  text-decoration: none;
+  font-size: 20px;
+  right: 8px;
+  width: initial;
+  height: initial;
 }
-#themepicker .action.imgur input {
-  display: none;
-}
-#themepicker .action.imgur:hover input {
-  display: inline;
+#themepicker .bg-selector > .add:hover {
+  opacity: 1;
 }
 #sound_control {
   margin-right: 5px;
