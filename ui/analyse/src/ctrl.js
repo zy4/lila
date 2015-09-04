@@ -70,6 +70,12 @@ module.exports = function(opts) {
       check: s.check,
       lastMove: s.uci ? [s.uci.substr(0, 2), s.uci.substr(2, 2)] : null,
     };
+    if (!dests && !s.check) {
+      // premove while dests are loading from server
+      // can't use when in check because it highlights the wrong king
+      config.turnColor = opposite(color);
+      config.movable.color = color;
+    }
     this.vm.step = s;
     this.vm.cgConfig = config;
     if (!this.chessground)
@@ -163,6 +169,7 @@ module.exports = function(opts) {
   this.addDests = function(dests, path) {
     this.analyse.addDests(dests, treePath.read(path));
     if (path === this.vm.pathStr) showGround();
+    this.chessground.playPremove();
   }.bind(this);
 
   this.reset = function() {

@@ -97,8 +97,21 @@ object Mod extends LilaController {
             }
           }
           publicLines <- Env.shutup.api getPublicLines user.id
-        } yield html.mod.communication(user, povWithChats, threads, publicLines)
+          spy <- Env.security userSpy user.id
+        } yield html.mod.communication(user, povWithChats, threads, publicLines, spy)
       }
+  }
+
+  private val ipIntelCache =
+    lila.memo.AsyncCache[String, String](ip => {
+      import play.api.libs.ws.WS
+      import play.api.Play.current
+      WS.url("http://check.getipintel.net/check.php").withQueryString("ip" -> ip).get().map(_.body)
+    }, maxCapacity = 2000)
+
+  def ipIntel(ip: String) = Secure(_.IpBan) { ctx =>
+    me =>
+      ipIntelCache(ip).map { Ok(_) }
   }
 
   def redirect(username: String, mod: Boolean = true) = Redirect(routes.User.show(username).url + mod.??("?mod"))

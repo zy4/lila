@@ -118,6 +118,8 @@ GET   /$gameId<\w{8}>/$color<white|black>/sides/player controllers.Round.sidesPl
 GET   /$gameId<\w{8}>/others                     controllers.Round.others(gameId: String)
 GET   /$gameId<\w{8}>/continue/:mode             controllers.Round.continue(gameId: String, mode: String)
 POST  /$gameId<\w{8}>/note                       controllers.Round.writeNote(gameId: String)
+GET   /$gameId<\w{8}>/mini                       controllers.Round.mini(gameId: String, color: String = "white")
+GET   /$gameId<\w{8}>/$color<white|black>/mini   controllers.Round.mini(gameId: String, color: String)
 GET   /$gameId<\w{8}>/edit                       controllers.Editor.game(gameId: String)
 GET   /$gameId<\w{8}>/$color<white|black>/analysis controllers.UserAnalysis.game(gameId: String, color: String)
 POST  /$fullId<\w{12}>/resign                    controllers.Round.resign(fullId: String)
@@ -252,6 +254,7 @@ POST  /mod/:ip/ipban                   controllers.Mod.ipban(ip: String)
 GET   /mod/log                         controllers.Mod.log
 POST  /mod/:username/refreshUserAssess controllers.Mod.refreshUserAssess(username: String)
 POST  /mod/:username/email             controllers.Mod.setEmail(username: String)
+GET   /mod/ip-intel                    controllers.Mod.ipIntel(ip: String)
 
 # Wiki
 GET   /wiki                            controllers.Wiki.home
@@ -302,7 +305,8 @@ GET   /editor                          controllers.Editor.index
 # Monitor
 GET   /monitor                         controllers.Monitor.index
 GET   /monitor/socket                  controllers.Monitor.websocket
-GET   /monitor/status                  controllers.Monitor.status
+GET   /monitor/status/:key             controllers.Monitor.status(key: String)
+GET   /monitor/status                  controllers.Monitor.statusParam
 
 # Report
 GET   /report                          controllers.Report.form
@@ -331,14 +335,6 @@ POST   /qa/:id/:a/move             controllers.QaAnswer.moveTo(id: Int, a: Int)
 POST   /qa/:id/comment             controllers.QaComment.question(id: Int)
 POST   /qa/:id/:a/comment          controllers.QaComment.answer(id: Int, a: Int)
 POST   /qa/:id/:c/rm-comment       controllers.QaComment.remove(id: Int, c: String)
-
-# RELAY
-GET   /watch                       controllers.Relay.index
-GET   /watch.atom                  controllers.Relay.atom
-GET   /watch/:id/:slug             controllers.Relay.show(id: String, slug: String)
-GET   /watch/:id/:slug/content     controllers.Relay.contentForm(id: String, slug: String)
-POST  /watch/:id/:slug/content     controllers.Relay.contentPost(id: String, slug: String)
-GET   /watch/$id<\w{8}>/socket/v:apiVersion controllers.Relay.websocket(id: String, apiVersion: Int)
 
 # API
 GET   /api/user                        controllers.Api.users

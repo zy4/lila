@@ -104,6 +104,10 @@ lichess.StrongSocket.prototype = {
       };
       self.ws.onmessage = function(e) {
         var m = JSON.parse(e.data);
+        // if (Math.random() > 0.5) {
+        //   console.log(m, 'skip');
+        //   return;
+        // }
         if (m.t == "n") {
           self.pong();
         } else self.debug(e.data);
@@ -317,6 +321,31 @@ lichess.storage = {
   }
 };
 
+lichess.isPageVisible = true;
+// using document.hidden doesn't entirely work because it may return false if the window is not minimized but covered by other applications
+window.addEventListener('focus', function() {
+  lichess.isPageVisible = true;
+});
+window.addEventListener('blur', function() {
+  lichess.isPageVisible = false;
+});
+lichess.desktopNotification = function(msg) {
+  if (lichess.isPageVisible || !("Notification" in window) || Notification.permission === "denied") return;
+  if (Notification.permission === "granted") {
+    var notification = new Notification("lichess", {
+      body: msg
+    });
+  } else {
+    Notification.requestPermission(function(permission) {
+      if (permission === "granted") {
+        var notification = new Notification("lichess", {
+          body: msg
+        });
+      }
+    });
+  }
+};
+
 (function() {
 
   /////////////
@@ -424,7 +453,15 @@ lichess.storage = {
       },
       nbm: function(e) {
         $('#nb_messages').text(e || "0").parent().parent().toggle(e > 0);
-        if (e) $.sound.newPM();
+        if (e) {
+          $.sound.newPM();
+          var inboxDesktopNotification = lichess.storage.get("inboxDesktopNotification") || "0";
+          var s = e.toString();
+          if (inboxDesktopNotification !== s) {
+            lichess.desktopNotification("New inbox message!");
+            lichess.storage.set("inboxDesktopNotification", s);
+          }
+        }
       },
       redirect: function(o) {
         setTimeout(function() {
@@ -471,6 +508,7 @@ lichess.storage = {
                 $('#top .challenge_notifications').addClass('shown');
                 $.sound.newChallenge();
               }
+              lichess.desktopNotification("You got challenged!");
               lichess.storage.set('challenge-' + data.id, 1);
             }
             refreshButton();
@@ -608,8 +646,9 @@ lichess.storage = {
         return false;
       });
 
-      function applyPowertip($els, placement) {
+      function userPowertip($els, placement) {
         $els.removeClass('ulpt').powerTip({
+          intentPollInterval: 200,
           fadeInTime: 100,
           fadeOutTime: 100,
           placement: placement,
@@ -628,15 +667,39 @@ lichess.storage = {
         }).data('powertip', ' ');
       }
 
-      function userPowertips() {
-        applyPowertip($('#site_header .ulpt'), 'e');
-        applyPowertip($('#friend_box .ulpt'), 'nw');
-        applyPowertip($('.ulpt'), 'w');
+      function gamePowertip($els, placement) {
+        $els.removeClass('glpt').powerTip({
+          intentPollInterval: 200,
+          fadeInTime: 100,
+          fadeOutTime: 100,
+          placement: placement,
+          mouseOnToPopup: true,
+          closeDelay: 200,
+          popupId: 'miniGame'
+        }).on({
+          powerTipPreRender: function() {
+            $.ajax({
+              url: ($(this).attr('href') || $(this).data('href')).replace(/\?.+$/, '') + '/mini',
+              success: function(html) {
+                $('#miniGame').html(html);
+                $('body').trigger('lichess.content_loaded');
+              }
+            });
+          }
+        }).data('powertip', ' ');
       }
-      setTimeout(userPowertips, 600);
-      $('body').on('lichess.content_loaded', userPowertips);
+
+      function updatePowertips() {
+        userPowertip($('#site_header .ulpt'), 'e');
+        userPowertip($('#friend_box .ulpt'), 'nw');
+        userPowertip($('.ulpt'), 'w');
+        gamePowertip($('.glpt'), 'w');
+      }
+      setTimeout(updatePowertips, 600);
+      $('body').on('lichess.content_loaded', updatePowertips);
 
       $('#message_notifications_tag').on('click', function() {
+        lichess.storage.remove("inboxDesktopNotification");
         $.ajax({
           url: $(this).data('href'),
           cache: false,
@@ -973,7 +1036,7 @@ lichess.storage = {
         lichess.storage.set('zoom', v);
 
         var $lichessGame = $('.lichess_game, .board_and_ground');
-        var $boardWrap = $lichessGame.find('.cg-board-wrap');
+        var $boardWrap = $lichessGame.find('.cg-board-wrap').not('.mini_board .cg-board-wrap');
         var $coordinateProgress = $('.progress_bar_container');
         var px = function(i) {
           return Math.round(i) + 'px';
@@ -1388,6 +1451,10 @@ lichess.storage = {
     });
     if (location.pathname.lastIndexOf('/round-next/', 0) === 0)
       window.history.replaceState(null, null, '/' + data.game.id);
+    if (!data.player.spectator && data.game.status.id < 25)
+      $('#topmenu').removeClass('hover').hoverIntent(function() {
+        $(this).toggleClass('hover');
+      });
   }
 
   function startPrelude(element, cfg) {
@@ -1440,18 +1507,23 @@ lichess.storage = {
     },
     set: function(users) {
       var self = this;
-      if (users.length > 0) {
-        self.list.html(users.map(function(u) {
-          return u.indexOf('(') === -1 ? $.userLink(u) : u.replace(/\s\(1\)/, '');
-        }).join(", "));
-        var nb = 0;
-        users.forEach(function(u) {
-          nb += (u.indexOf('(') === -1 ? 1 : parseInt(u.replace(/^.+\((\d+)\)$/, '$1')));
-        });
-        self.number.html(nb);
-        self.element.show();
+      if (Array.isArray(users)) {
+        if (users.length > 0) {
+          self.list.html(users.map(function(u) {
+            return u.indexOf('(') === -1 ? $.userLink(u) : u.replace(/\s\(1\)/, '');
+          }).join(", "));
+          if (self.number.length) {
+            var nb = 0;
+            users.forEach(function(u) {
+              nb += (u.indexOf('(') === -1 ? 1 : parseInt(u.replace(/^.+\((\d+)\)$/, '$1')));
+            });
+            self.number.html(nb);
+          }
+          self.element.show();
+        } else self.element.hide();
       } else {
-        self.element.hide();
+        self.list.html(users + ' players in the chat');
+        self.element.show();
       }
     }
   });

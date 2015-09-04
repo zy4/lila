@@ -96,12 +96,16 @@ final class JsonView(
               "clockSound" -> pref.clockSound,
               "enablePremove" -> pref.premove,
               "showCaptured" -> pref.captured,
-              "submitMove" -> (
-                pref.submitMove == Pref.SubmitMove.ALWAYS || {
-                  pref.submitMove == Pref.SubmitMove.CORRESPONDENCE &&
-                    game.isCorrespondence && game.nonAi
-                })
-            ),
+              "submitMove" -> {
+                import Pref.SubmitMove._
+                pref.submitMove match {
+                  case _ if game.hasAi => false
+                  case ALWAYS => true
+                  case CORRESPONDENCE_UNLIMITED if game.isCorrespondence => true
+                  case CORRESPONDENCE_ONLY if game.hasCorrespondenceClock => true
+                  case _ => false
+                }
+              }),
             "chat" -> chat.map { c =>
               JsArray(c.lines map {
                 case lila.chat.UserLine(username, text, _) => Json.obj(
@@ -152,6 +156,7 @@ final class JsonView(
               "provisional" -> player.provisional.option(true),
               "onGame" -> (player.isAi || socket.onGame(player.color)),
               "checks" -> checkCount(game, player.color),
+              "berserk" -> player.berserk.option(true),
               "hold" -> (withBlurs option hold(player)),
               "blurs" -> (withBlurs option blurs(game, player))
             ).noNull,
@@ -165,6 +170,7 @@ final class JsonView(
               "provisional" -> opponent.provisional.option(true),
               "onGame" -> (opponent.isAi || socket.onGame(opponent.color)),
               "checks" -> checkCount(game, opponent.color),
+              "berserk" -> opponent.berserk.option(true),
               "hold" -> (withBlurs option hold(opponent)),
               "blurs" -> (withBlurs option blurs(game, opponent))
             ).noNull,
@@ -246,8 +252,7 @@ final class JsonView(
     "rematch" -> game.next,
     "source" -> game.source.map(sourceJson),
     "status" -> game.status,
-    "tournamentId" -> game.tournamentId,
-    "relayId" -> game.relayId).noNull
+    "tournamentId" -> game.tournamentId).noNull
 
   private def blurs(game: Game, player: lila.game.Player) = {
     val percent = game.playerBlurPercent(player.color)

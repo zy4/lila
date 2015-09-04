@@ -38,8 +38,7 @@ object Environment
     with AnalysisHelper
     with IRCHelper
     with TournamentHelper
-    with SimulHelper
-    with RelayHelper {
+    with SimulHelper {
 
   implicit val LilaHtmlMonoid = scalaz.Monoid.instance[Html](
     (a, b) => Html(a.body + b.body),
@@ -49,7 +48,7 @@ object Environment
 
   def netDomain = apiEnv.Net.Domain
   def netBaseUrl = apiEnv.Net.BaseUrl
-  lazy val portsString = apiEnv.Net.ExtraPorts mkString ","
+  val portsString = apiEnv.Net.ExtraPorts mkString ","
 
   def isProd = apiEnv.isProd
 

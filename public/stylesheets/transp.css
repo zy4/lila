@@ -187,3 +187,7 @@ body.transp #themepicker div.bg-selector {
   background: rgba(40, 40, 40, 0.6);
   margin-top: unset;
 }
+body.transp ::-webkit-scrollbar,
+body.transp ::-webkit-scrollbar-corner {
+  background: rgba(0, 0, 0, 0.1);
+}

@@ -1073,6 +1073,7 @@ body.fpmenu #fpmenu {
   font-size: 12px;
   opacity: 0.8;
   transition: opacity 0.3s;
+  -webkit-transform: translateZ(0);
 }
 #fpmenu .footer:hover {
   opacity: 1;
@@ -1145,7 +1146,7 @@ body.fpmenu #fpmenu {
 #topmenu section:hover > a {
   background: #fff;
 }
-#topmenu section:hover div {
+#topmenu.hover section:hover div {
   display: block;
 }
 #topmenu div {
@@ -2297,7 +2298,8 @@ div.relation_actions .button {
 div.relation_actions a.relation.processing {
   opacity: 0.2
 }
-input.copyable {
+input.copyable,
+textarea.copyable {
   background: #eee;
   font-family: monospace;
   padding: 3px 5px;
@@ -2532,4 +2534,20 @@ input.copyable {
   100% {
     text-shadow: 0 0 20px #fefcc9, 10px -10px 30px #fefcc9, -20px -20px 40px #feec85, 22px -42px 60px #ffae34, -22px -58px 50px #ec760c, 0 -82px 80px #cd4606, 10px -90px 80px #973716;
   }
+}
+body ::-webkit-scrollbar,
+body ::-webkit-scrollbar-corner {
+  background: #eee;
+}
+body ::-webkit-scrollbar-thumb {
+  background: rgba(204, 204, 204, 0.7);
+}
+body ::-webkit-scrollbar-thumb:hover {
+  background: rgba(50, 50, 50, 0.2);
+}
+body ::-webkit-scrollbar-thumb:active {
+  background: rgba(50, 50, 50, 0.3);
+}
+body ::-webkit-scrollbar-track {
+  box-shadow: 0 0 6px rgba(50, 50, 50, 0.3) inset;
 }

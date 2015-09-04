@@ -24,10 +24,20 @@ $(function() {
           $(this).parent('form').submit();
         });
         $('body').trigger('lichess.content_loaded');
+        $(this).find('li.ip').slice(0, 3).each(function() {
+          var $li = $(this);
+          $.ajax({
+            url: '/mod/ip-intel?ip=' + $(this).find('.address').text(),
+            success: function(res) {
+              var p = Math.round(parseFloat(res) * 100);
+              $li.append($('<span class="intel">' + p + '% proxy</span>'));
+            }
+          });
+        });
       });
       return false;
     });
-    if (location.search.indexOf('mod') != -1) $(this).click();
+    if (location.search.indexOf('mod') === 1) $(this).click();
   });
 
   $("div.user_show .note_zone_toggle").each(function() {
